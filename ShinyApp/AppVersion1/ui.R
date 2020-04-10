@@ -13,20 +13,24 @@ shinyUI(fluidPage(
                # First Main-Tab------------
                tabPanel("Explore Training Data",
                         tabsetPanel(
-                            # First Sub-Tab
+                            # First Sub-Tab, Filters
                             tabPanel("Filters",
                                      br(),
                                      p(strong("These filters are applied to all Plots and the data.table of the training data")),
-                                     submitButton("Apply Filters"),
                                      br(),
-                                     p(strong("Filters about the policies")),
+                                     radioButtons("Filter_pol", "Filter Policy-Types", choices = c("Yes", "No"), selected = "No", inline = TRUE),
+                                     conditionalPanel(
+                                       condition = "input.Filter_pol == 'Yes'",
                                      flowLayout(
                                        sliderInput("Filter_pol_bonus", "Filter pol_bonus", min=0.5, max=3.5, value=c(0.5, 3.5)),
                                        checkboxGroupInput("Filter_pol_coverage", "Filter pol_coverage", c("Mini", "Median1", "Median2", "Maxi"), selected=c("Mini", "Median1", "Median2", "Maxi"), inline=TRUE),
                                        checkboxGroupInput("Filter_pol_usage", "Filter pol_usage", c("Retired", "WorkPrivate", "Professional", "AllTrips"), selected=c("Retired", "WorkPrivate", "Professional", "AllTrips"), inline=TRUE)
+                                     )
                                      ),
                                      br(),
-                                     p(strong("Filters about the drivers / policyholders")),
+                                     radioButtons("Filter_drv", "Filter Drivers / Policy-Holders", choices = c("Yes", "No"), selected = "No", inline = TRUE),
+                                     conditionalPanel(
+                                       condition = "input.Filter_drv == 'Yes'",
                                      flowLayout(
                                        checkboxGroupInput("Filter_drv_drv2","Filter drv_drv2", c("1 Driver", "2 Drivers"), selected=c("1 Driver", "2 Drivers"), inline=TRUE),
                                        sliderInput("Filter_drv_age1", "Filter drv_age1", min=18, max=105, value=c(18,105)),
@@ -35,18 +39,21 @@ shinyUI(fluidPage(
                                        checkboxGroupInput("Filter_drv_sex2", "Filter drv_sex2", c("M","F"), selected=c("M","F"), inline=TRUE),
                                        sliderInput("Filter_drv_age_lic1", "Filter drv_age_lic1", min=0, max=115, value=c(0,115)),
                                        sliderInput("Filter_drv_age_lic2", "Filter drv_age_lic2", min=0, max=115, value=c(0,115))
+                                     )
                                      ),
                                      br(),
-                                     p(strong("Filters about the insured cars")),
+                                     radioButtons("Filter_vh", "Filter insured cars", choices = c("Yes", "No"), selected = "No", inline = TRUE),
+                                     conditionalPanel(
+                                       condition = "input.Filter_vh == 'Yes'",
                                      flowLayout(
                                        sliderInput("Filter_vh_age", "Filter vh_age", min=0, max=70, value=c(0,70)),
                                        sliderInput("Filter_vh_cyl", "Filter vh_cyl", min=0, max=7000, value=c(0,7000)),
                                        sliderInput("Filter_vh_din", "Filter vh_din", min=0, max=600, value=c(0,600))
                                        
-                                     )
+                                     ))
                             ),
                             
-                            # Second Sub-Tab
+                            # Second Sub-Tab, Scatterplot
                             tabPanel("Scatterplot",
                                      br(),
                                      sidebarLayout(
@@ -56,15 +63,15 @@ shinyUI(fluidPage(
                                              selectInput("Scatter_Y_Axis", "Variable for Y-Axis", choices = numcols, selected = "Sum_claim_amount"),
                                              selectInput("Scatter_Color", "Variable for color", choices = factorcols, selected = "NULL"),
                                              selectInput("Scatter_Shape", "Variable for shape", choices = factorcols, selected = "NULL"),
-                                             submitButton("Apply Axis, Color, Shape"),
-                                             br(),
-                                             radioButtons("Scatter_Smooth", "Add Regression (only possible if shape = NULL)", choices = c("Yes", "No"), selected = "No", inline = TRUE),
+                                             actionButton("Scatter_Go", "Create Plot"),
+                                             br(), br(),
+                                             radioButtons("Scatter_Smooth", "Add Regression", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                                              conditionalPanel(
                                                condition = "input.Scatter_Smooth == 'Yes'",
-                                               selectInput("Scatter_SmoothMethod", "Method",
-                                                           list("auto", "lm", "glm", "gam"), selected = "auto")
+                                               selectInput("Scatter_Method", "Select Regression Method", choices = c("auto", "lm", "glm", "gam"), selected = "auto")
+                                               
                                              ),
-                                             submitButton("Select Method / Apply")
+                                             
                                              ),
                                          mainPanel(
                                            p(strong("Scatterplot filtered according to Filter-Page")),
@@ -74,17 +81,12 @@ shinyUI(fluidPage(
                                          )
                                      ),
                             
-                            # Third Sub-Tab
+                            # Third Sub-Tab, Data Table
                             tabPanel("Data Table",
                                      br(),
-                                     sidebarLayout(
-                                         sidebarPanel(
-                                             
-                                         ),
-                                         mainPanel(
-                                             
-                                         )
-                                     )
+                                     mainPanel(
+                                        dataTableOutput("traindatatable")
+                                        )
                                      )
                         
                         )),

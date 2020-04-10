@@ -17,19 +17,42 @@ shinyServer(function(input, output) {
         filtered
     })
     
+    # Create the Scatterplot
     output$Scatterplot = renderPlot({
-        Scatter = ggplot(filtered(), aes_string(x=input$Scatter_X_Axis, y=input$Scatter_Y_Axis, color=input$Scatter_Color, shape=input$Scatter_Shape)) +
+        Scatter_X_Axis = eventReactive(input$Scatter_Go, {
+            input$Scatter_X_Axis
+        })
+        
+        Scatter_Y_Axis = eventReactive(input$Scatter_Go, {
+            input$Scatter_Y_Axis
+        })
+        
+        Scatter_Color = eventReactive(input$Scatter_Go, {
+            input$Scatter_Color
+        })
+        
+        Scatter_Shape = eventReactive(input$Scatter_Go, {
+            input$Scatter_Shape
+        })
+        
+        PLOT = ggplot(filtered(), aes_string(x=Scatter_X_Axis(), y=Scatter_Y_Axis(), color=Scatter_Color(), shape=Scatter_Shape())) +
             geom_point()
-        ScatterSmoothGAMAUTO = Scatter +
-            geom_smooth(formula = y~s(x, bs="cs"), na.rm=TRUE, method = input$Scatter_SmoothMethod, se=TRUE) +
-            theme_classic()
-        ScatterSmooth = Scatter +
-            geom_smooth(formula = y~x, na.rm=TRUE, method = input$Scatter_SmoothMethod) +
-            theme_classic()
-        ScSm = input$Scatter_Smooth
-        ScSmMethod = input$Scatter_SmoothMethod
-        ifelse(ScSm == "Yes", ifelse(ScSmMethod %in% c("auto", "gam"), return(ScatterSmoothGAMAUTO), return(ScatterSmooth)), return(Scatter + theme_classic()))
+        
+        ifelse(input$Scatter_Smooth=="Yes",
+               ifelse(input$Scatter_Method %in% c("gam", "auto"),
+                      return(PLOT +
+                                 geom_smooth(formula = y~s(x, bs="cs"), na.rm=TRUE, method=input$Scatter_Method) +
+                                 theme_classic()),
+                      return(PLOT +
+                                 geom_smooth(formula = y~x, method=input$Scatter_Method) +
+                                 theme_classic())),
+               return(PLOT + theme_classic())) 
     })
+    
+    # Create the data table for the training data
+    output$traindatatable = renderDataTable({
+        filtered()
+    }, options=list(searching=FALSE, paging=TRUE), rownames=FALSE, filter="top")
 
 
 })
