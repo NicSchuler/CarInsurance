@@ -18,6 +18,8 @@ shinyUI(fluidPage(
                                      br(),
                                      p(strong("These filters are applied to all Plots and the data.table of the training data")),
                                      br(),
+                                     
+                                     # Filter policies
                                      radioButtons("Filter_pol", "Filter Policy-Types", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                                      conditionalPanel(
                                        condition = "input.Filter_pol == 'Yes'",
@@ -28,6 +30,8 @@ shinyUI(fluidPage(
                                      )
                                      ),
                                      br(),
+                                     
+                                     # Filter Drivers / Policy-Holders
                                      radioButtons("Filter_drv", "Filter Drivers / Policy-Holders", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                                      conditionalPanel(
                                        condition = "input.Filter_drv == 'Yes'",
@@ -42,15 +46,33 @@ shinyUI(fluidPage(
                                      )
                                      ),
                                      br(),
+                                     
+                                     # Filter insured cars
                                      radioButtons("Filter_vh", "Filter insured cars", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                                      conditionalPanel(
                                        condition = "input.Filter_vh == 'Yes'",
                                      flowLayout(
                                        sliderInput("Filter_vh_age", "Filter vh_age", min=0, max=70, value=c(0,70)),
                                        sliderInput("Filter_vh_cyl", "Filter vh_cyl", min=0, max=7000, value=c(0,7000)),
-                                       sliderInput("Filter_vh_din", "Filter vh_din", min=0, max=600, value=c(0,600))
+                                       sliderInput("Filter_vh_din", "Filter vh_din", min=0, max=600, value=c(0,600)),
+                                       sliderInput("Filter_vh_speed", "Filter vh_speed", min=20, max=320, value=c(20,320)),
+                                       checkboxGroupInput("Filter_vh_type", "Filter vh_type", c("Tourism","Commercial"), selected=c("Tourism","Commercial"), inline=TRUE),
+                                       sliderInput("Filter_vh_value", "Filter vh_value", min=0, max=160000, value=c(0,160000)),
+                                       sliderInput("Filter_vh_weight", "Filter vh_weight", min=0, max=8000, value=c(0,8000))
                                        
-                                     ))
+                                     )),
+                                     br(),
+                                     
+                                     # Filter insured cars
+                                     radioButtons("Filter_claims", "Filter the Claims", choices = c("Yes", "No"), selected = "No", inline = TRUE),
+                                     conditionalPanel(
+                                       condition = "input.Filter_claims == 'Yes'",
+                                     flowLayout(
+                                       checkboxGroupInput("Filter_CountDistinct_id_claim", "Filter CountDistinct_id_claim", c(0:9), selected=c(0:9), inline=TRUE),
+                                       sliderInput("Filter_Sum_claim_amount", "Filter Sum_claim_amount", min=-10000, max=150000, value=c(-10000,150000))
+                                     )),
+                                         
+                                     actionButton("Filter_Go", "Apply Filter")
                             ),
                             
                             # Second Sub-Tab, Scatterplot

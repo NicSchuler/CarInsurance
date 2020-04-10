@@ -12,9 +12,27 @@ traindata$drv_drv2 = factor(traindata$drv_drv2, labels=c("1 Driver", "2 Drivers"
 shinyServer(function(input, output) {
     
     # Filter the data according to "Filter"-Panel
-    filtered = reactive({
-        filtered = traindata
-        filtered
+    filtered = eventReactive(input$Filter_Go, {
+        traindata[pol_bonus >= input$Filter_pol_bonus[1] & pol_bonus <= input$Filter_pol_bonus[2] &
+                  pol_coverage %in% input$Filter_pol_coverage &
+                  pol_usage %in% input$Filter_pol_usage &
+                  drv_drv2 %in% input$Filter_drv_drv2 &
+                  drv_age1 >= input$Filter_drv_age1[1] & drv_age1 <= input$Filter_drv_age1[2] &
+                  (drv_age2 >= input$Filter_drv_age2[1] & drv_age2 <= input$Filter_drv_age2[2] | drv_age2 == 0) &
+                  drv_sex1 %in% input$Filter_drv_sex1 &
+                  drv_sex2 %in% c(input$Filter_drv_sex2, "") &
+                  drv_age_lic1 >= input$Filter_drv_age_lic1[1] & drv_age_lic1 <= input$Filter_drv_age_lic1[2] &
+                  drv_age_lic2 >= input$Filter_drv_age_lic2[1] & drv_age_lic2 <= input$Filter_drv_age_lic2[2] &
+                  vh_age >= input$Filter_vh_age[1] & vh_age <= input$Filter_vh_age[2] &
+                  vh_cyl >= input$Filter_vh_cyl[1] & vh_cyl <= input$Filter_vh_cyl[2] &
+                  vh_din >= input$Filter_vh_din[1] & vh_din <= input$Filter_vh_din[2] &
+                  vh_speed >= input$Filter_vh_speed[1] & vh_speed <= input$Filter_vh_speed[2] &
+                  vh_type %in% input$Filter_vh_type &
+                  vh_weight >= input$Filter_vh_weight[1] & vh_weight <= input$Filter_vh_weight[2] &
+                  vh_value >= input$Filter_vh_value[1] & vh_value <= input$Filter_vh_value[2] &
+                  CountDistinct_id_claim %in% input$Filter_CountDistinct_id_claim &
+                  Sum_claim_amount >= input$Filter_Sum_claim_amount[1] & Sum_claim_amount <= input$Filter_Sum_claim_amount[2]]
+                  
     })
     
     # Create the Scatterplot
