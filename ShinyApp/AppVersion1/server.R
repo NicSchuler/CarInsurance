@@ -20,12 +20,15 @@ shinyServer(function(input, output) {
     output$Scatterplot = renderPlot({
         Scatter = ggplot(filtered(), aes_string(x=input$Scatter_X_Axis, y=input$Scatter_Y_Axis, color=input$Scatter_Color, shape=input$Scatter_Shape)) +
             geom_point()
+        ScatterSmoothGAMAUTO = Scatter +
+            geom_smooth(formula = y~s(x, bs="cs"), na.rm=TRUE, method = input$Scatter_SmoothMethod, se=TRUE) +
+            theme_classic()
         ScatterSmooth = Scatter +
-            geom_smooth(formula = y~x, na.rm=TRUE) +
+            geom_smooth(formula = y~x, na.rm=TRUE, method = input$Scatter_SmoothMethod) +
             theme_classic()
         ScSm = input$Scatter_Smooth
-        
-        ifelse(ScSm == "Yes", return(ScatterSmooth), return(Scatter + theme_classic()))
+        ScSmMethod = input$Scatter_SmoothMethod
+        ifelse(ScSm == "Yes", ifelse(ScSmMethod %in% c("auto", "gam"), return(ScatterSmoothGAMAUTO), return(ScatterSmooth)), return(Scatter + theme_classic()))
     })
 
 
