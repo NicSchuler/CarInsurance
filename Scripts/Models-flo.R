@@ -1,5 +1,4 @@
 # Models -----
-
 library(data.table)
 ins <- fread("Data/pg17traindata.csv")
 library(randomForest)
@@ -59,4 +58,24 @@ pred <- predict(rf1, model_set.test)
 # root mean squared error
 sqrt(mean((pred-model_set.test$Sum_claim_amount)^2))
 mean(model_set.test$Sum_claim_amount)
+
+
+linear <- lm(Sum_claim_amount ~ ., data=m2)
+pred <- predict(linear, model_set.test) 
+sqrt(mean((pred-model_set.test$Sum_claim_amount)^2)) #983
+      
+summary(linear)
+
+# only with damage
+m1 <- model_set
+
+m1 <- as.data.table(model_set)
+setkey(m1,CountDistinct_id_claim)
+m2 <- m1[CountDistinct_id_claim>0]
+hist(log(m2$Sum_claim_amount))
+
+
+
+
+
 
