@@ -2,83 +2,70 @@ library(data.table)
 # Import and clean data-----------
 dtrain <- read.csv("Train_pg17.csv", stringsAsFactors=TRUE)
 dtest <- read.csv("Test_pg17.csv", stringsAsFactors=TRUE)
-table(dtrain$dummy_claim)
 
-# it's clean
+cor(dtrain$vh_cyl,dtrain$vh_din) # almost 73%
+model_set <- dtrain[,c(6,11,12,16,18,22,28,30,31,34)]
 
-# Delete useless columns
-dtrain$id_client=NULL
-dtrain$id_vehicle=NULL
-dtrain$id_policy=NULL
-dtrain$id_year=NULL
-dtrain$Sum_claim_amount=NULL
+# keeping only significant parts of insee code 
+model_set$pol_insee_code <- as.factor(substr(model_set$pol_insee_code, 0, 2))
+pie((sort(table(model_set$pol_insee_code)))/length(model_set$pol_insee_code))
 
-dtest$id_client=NULL
-dtest$id_vehicle=NULL
-dtest$id_policy=NULL
-dtest$id_year=NULL
-dtest$Sum_claim_amount=NULL
 
-# check variable classes
-str(dtrain)
-dtrain$dummy_claim <- as.factor(dtrain$dummy_claim)
-dtest$dummy_claim <- as.factor(dtest$dummy_claim)
+# dummy as factor
+model_set$dummy_claim <- as.factor(model_set$dummy_claim)
 
 # Random Forest ----
 library(randomForest)
-trainsample <- dtrain[sample(nrow(dtrain), 16000), ]
+trainsample <- model_set[sample(nrow(model_set), 16000), ]
 
 start.time <- Sys.time()
-rf <- randomForest(dummy_claim ~ pol_coverage+pol_duration+pol_usage+drv_age1+
-                     drv_sex1+vh_age+vh_value+vh_speed, data = dtrain,
+rf <- randomForest(dummy_claim ~.-pol_insee_code, data = trainsample,
                    family = binomial,na.action=na.omit)
 end.time <- Sys.time()
 time.taken <- end.time - start.time
-time.taken
+time.taken # 2 minutes
 
-# rf:
-# Type of random forest: classification
-# Number of trees: 500
-# No. of variables tried at each split: 2
-# 
-# OOB estimate of  error rate: 9.35%
-# Confusion matrix:
-#       0     1 class.error
-# 0 49989 11495   0.1869592
-# 1     0 61485   0.0000000
 
-# Predicting
+# preparing test set for prediction -- necessary?
+model_set_test <- dtest[,c(6,11,12,16,18,22,28,30,31,34)]
+dtest$dummy_claim <- as.factor(dtest$dummy_claim)
+model_set_test$pol_insee_code <- as.factor(substr(model_set_test$pol_insee_code, 0, 2))
+model_set_test$dummy_claim <- as.factor(model_set_test$dummy_claim)
+# Predicting 
 pred <- predict(rf, dtest,type = "response") #type = "response" necessary?
 
 library(caret)
-confusionMatrix(pred,dtest$dummy_claim)
+confusionMatrix(pred,model_set_test$dummy_claim)
+
 # Confusion Matrix and Statistics
 # 
 # Reference
-# Prediction            0     1
-#                 0 21305  2422
-#                 1  4992   946
+# Prediction     0     1
+# 0 15574  1599
+# 1 10723  1769
 # 
-# Accuracy : 0.7501         
-# 95% CI : (0.7451, 0.755)
+# Accuracy : 0.5846         
+# 95% CI : (0.579, 0.5902)
 # No Information Rate : 0.8865         
 # P-Value [Acc > NIR] : 1              
 # 
-# Kappa : 0.0683         
+# Kappa : 0.0539         
 # 
 # Mcnemar's Test P-Value : <2e-16         
 #                                          
-#             Sensitivity : 0.8102         
-#             Specificity : 0.2809         
-#          Pos Pred Value : 0.8979         
-#          Neg Pred Value : 0.1593         
+#             Sensitivity : 0.5922         
+#             Specificity : 0.5252         
+#          Pos Pred Value : 0.9069         
+#          Neg Pred Value : 0.1416         
 #              Prevalence : 0.8865         
-#          Detection Rate : 0.7182         
-#    Detection Prevalence : 0.7998         
-#       Balanced Accuracy : 0.5455         
+#          Detection Rate : 0.5250         
+#    Detection Prevalence : 0.5789         
+#       Balanced Accuracy : 0.5587         
 #                                          
-#        'Positive' Class : 0  
+#        'Positive' Class : 0
 
+# ROC - Curve
 
-roc(dtest$dummy_claim,pred,plot = TRUE,legacy.axes=TRUE,percent = TRUE,xlab="False Positive Percentage(1-Sensitivity)",
-    ylab="True Positive Percentage(Sensitivity)",col="gold",lwd=3)
+# find important insee codes --> 84 und 32
+lm <- lm(dummy_claim ~ pol_insee_code, data = trainsample)
+
