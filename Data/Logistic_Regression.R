@@ -27,11 +27,15 @@ dtest$dummy_claim <- as.factor(dtest$dummy_claim)
 # logistic regression model
 
 
-logmod <- glm(dummy_claim ~ .,data = dtrain,
+logmod <- glm(dummy_claim ~ pol_coverage+pol_duration+pol_usage+drv_age1+
+                drv_sex1+vh_age+vh_value+vh_speed,data = dtrain,
               family=binomial(link="logit"),maxit=100)
 
+# Confusion Matrix
 prediction <- predict.glm(logmod,newdata=dtest,type = "response")
+table(prediction>0.5,dtest$dummy_claim)
 
-memory.size(max = FALSE)
-
+# ROC Curve
+roc(dtest$dummy_claim,prediction,plot = TRUE,legacy.axes=TRUE,percent = TRUE,xlab="False Positive Percentage(1-Sensitivity)",
+    ylab="True Positive Percentage(Sensitivity)",col="gold",lwd=3)
 
