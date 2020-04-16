@@ -78,3 +78,7 @@ confusionMatrix(pred,dtest$dummy_claim)
 #       Balanced Accuracy : 0.5455         
 #                                          
 #        'Positive' Class : 0  
+
+
+roc(dtest$dummy_claim,pred,plot = TRUE,legacy.axes=TRUE,percent = TRUE,xlab="False Positive Percentage(1-Sensitivity)",
+    ylab="True Positive Percentage(Sensitivity)",col="gold",lwd=3)
