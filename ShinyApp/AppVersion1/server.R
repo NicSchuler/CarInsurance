@@ -4,7 +4,7 @@ library(data.table)
 library(ggplot2)
 
 # Load the data and change the claims counter (Number not amount) to a factor 
-traindata = fread("../../Data/pg17traindata.csv", stringsAsFactors = TRUE)
+traindata = fread("../../Data/pg17traindata2.csv", stringsAsFactors = TRUE)
 traindata$CountDistinct_id_claim = as.factor(traindata$CountDistinct_id_claim)
 traindata$drv_drv2 = factor(traindata$drv_drv2, labels=c("1 Driver", "2 Drivers"))
 traindata$claim = as.factor(ifelse(traindata$Sum_claim_amount > 0, 1,0))
