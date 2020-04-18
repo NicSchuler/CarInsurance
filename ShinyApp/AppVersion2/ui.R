@@ -5,7 +5,7 @@ library(tidyverse)
 # Drop-Down Lists-----------
 traincols = colnames(traindata)
 
-numcols = c("pol_bonus", "pol_duration", "drv_age1", "drv_age2", "drv_age_lic1", "drv_age_lic2", "vh_age", "vh_cyl", "vh_speed", "vh_value", "vh_weight", "Sum_claim_amount")
+numcols = c("pol_bonus", "pol_duration", "drv_age1", "drv_age2", "drv_age_lic1", "drv_age_lic2", "vh_age", "vh_cyl", "vh_din", "vh_speed", "vh_value", "vh_weight", "Sum_claim_amount")
 
 factorcols = c("NULL", "pol_coverage", "pol_pay_freq", "pol_payd", "pol_usage", "drv_drv2", "drv_sex1", "drv_sex2", "vh_fuel", "vh_make", "vh_type", "CountDistinct_id_claim")
 
@@ -14,7 +14,7 @@ MapVars = c("insured_Cars", "Avg_pol_bonus", "Avg_claim_count", "Avg_claim_amoun
 # Define UI for application-----------
 
 shinyUI(fluidPage(
-    navbarPage("BSG Insurance",
+    navbarPage("BSGN Insurance",
                # First Main-Tab------------
                tabPanel("Explore Training Data",
                         tabsetPanel(
