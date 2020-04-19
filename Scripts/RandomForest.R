@@ -1,71 +1,86 @@
+rm(list = ls())
 library(data.table)
-# Import and clean data-----------
+library(randomForest)
+library(caret)
+# Import and adapt data-----------
 dtrain <- read.csv("../Data/Train_pg17.csv", stringsAsFactors=TRUE)
 dtest <- read.csv("../Data/Test_pg17.csv", stringsAsFactors=TRUE)
 
 cor(dtrain$vh_cyl,dtrain$vh_din) # almost 73%
-model_set <- dtrain[,c(6,11,12,16,18,22,28,30,31,34)]
-
-# keeping only significant parts of insee code 
-model_set$pol_insee_code <- as.factor(substr(model_set$pol_insee_code, 0, 2))
-pie((sort(table(model_set$pol_insee_code)))/length(model_set$pol_insee_code))
-
+model_set <- dtrain[,c(6,11,16,18,22,28,30,31,34)]
 
 # dummy as factor
 model_set$dummy_claim <- as.factor(model_set$dummy_claim)
 
-# Random Forest ----
-library(randomForest)
-trainsample <- model_set[sample(nrow(model_set), 16000), ]
+# Tuned random forest-----
+fitControl <- trainControl(## 10-fold CV
+  method = "repeatedcv",
+  number = 10,
+  ## repeated three times
+  repeats = 2)
+
+# sample set for calculating doubling factor
+trainsample <- model_set[sample(nrow(model_set), 150), ]
 
 start.time <- Sys.time()
-rf <- randomForest(dummy_claim ~.-pol_insee_code, data = model_set,
-                   family = binomial,na.action=na.omit)
+rf_tuned <- train(dummy_claim ~.,
+                  data = model_set,
+                  method = "rf",
+                  na.action=na.omit,
+                  trControl = fitControl)
 end.time <- Sys.time()
 time.taken <- end.time - start.time
-time.taken # 2 minutes
+time.taken 
 
+save(rf_tuned, file = "rf_tuned.RData")
 
-# preparing test set for prediction -- necessary?
-model_set_test <- dtest[,c(6,11,12,16,18,22,28,30,31,34)]
-dtest$dummy_claim <- as.factor(dtest$dummy_claim)
-model_set_test$pol_insee_code <- as.factor(substr(model_set_test$pol_insee_code, 0, 2))
-model_set_test$dummy_claim <- as.factor(model_set_test$dummy_claim)
-# Predicting 
-pred <- predict(rf, dtest,type = "response") #type = "response" necessary?
+# tuned model with 10 fold cv repeated 10 time takes 
+# 17 sec for n = 100 
+# 35 sec for n = 200 --> linear --> 2^17 = 131072
+log2(100) # 6.64
+2^10 # = 17408
+(17*1024)/360
+122970 / 2^6
+ggplot(rf_tuned)
 
-library(caret)
-confusionMatrix(pred,model_set_test$dummy_claim)
+# Looking at its predictive power 
+pred2 <- predict(rf_tuned, newdata =  dtest)
+confusionMatrix(pred2,model_set_test$dummy_claim)
+dtest2 <- as.data.table(dtest)
+dtest2$pred <- pred2
 
-# Confusion Matrix and Statistics
-# 
-# Reference
-# Prediction     0     1
-# 0 15574  1599
-# 1 10723  1769
-# 
-# Accuracy : 0.5846         
-# 95% CI : (0.579, 0.5902)
-# No Information Rate : 0.8865         
-# P-Value [Acc > NIR] : 1              
-# 
-# Kappa : 0.0539         
-# 
-# Mcnemar's Test P-Value : <2e-16         
-#                                          
-#             Sensitivity : 0.5922         
-#             Specificity : 0.5252         
-#          Pos Pred Value : 0.9069         
-#          Neg Pred Value : 0.1416         
-#              Prevalence : 0.8865         
-#          Detection Rate : 0.5250         
-#    Detection Prevalence : 0.5789         
-#       Balanced Accuracy : 0.5587         
-#                                          
-#        'Positive' Class : 0
+# Tuned Regression ----
+# on the data predicted positive in classification 
+dtrain2 <- as.data.table(dtrain)
+dtrain2$pred <- predict(rf_tuned, dtrain2)
 
-# ROC - Curve
+# table with only positively predicted training data
+setkey(dtrain2,pred)
+dtrain3 <- dtrain2[dtrain2$pred == 1]
 
-# find important insee codes --> 84 und 32
-lm <- lm(dummy_claim ~ pol_insee_code, data = trainsample)
+# preparing the data for regression
+dtrain4 <- dtrain3[,c(6,11,16,18,22,28,30,31,33)]
+
+# tuning regression
+fitControl <- trainControl(## 10-fold CV
+  method = "repeatedcv",
+  number = 10,
+  ## repeated three times
+  repeats = 10)
+
+lm_tuned <- train(Sum_claim_amount ~.,
+                  data = dtrain4,
+                  method = "lm",
+                  na.action=na.omit,
+                  trControl = fitControl)
+
+save(lm_tuned, file = "lm_tuned.RData")
+
+# table with only positively predicted testing data
+setkey(dtest2,pred)
+dtest3 <- dtest2[dtest2$pred == 1]
+
+pred3 <- predict(lm_tuned, dtest3)
+rmse <- qrt(mean((dtest3$Sum_claim_amount-pred3)^2))
+rmse
 

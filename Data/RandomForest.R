@@ -1,6 +1,7 @@
 rm(list = ls())
 library(data.table)
 library(randomForest)
+library(caret)
 # Import and adapt data-----------
 dtrain <- read.csv("../Data/Train_pg17.csv", stringsAsFactors=TRUE)
 dtest <- read.csv("../Data/Test_pg17.csv", stringsAsFactors=TRUE)
