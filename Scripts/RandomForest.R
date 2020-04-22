@@ -1,3 +1,8 @@
+# Achtung produziert rmse von fast 1500 unter anderem, weil random forest nur mit 150
+# Beobachtungen läuft. Anpassungen in Zeile 28 und 32 nötig um Modell mit allen trainings-
+# daten zu trainieren.
+
+
 rm(list = ls())
 library(data.table)
 library(randomForest)
@@ -24,7 +29,7 @@ trainsample <- model_set[sample(nrow(model_set), 150), ]
 
 start.time <- Sys.time()
 rf_tuned <- train(dummy_claim ~.,
-                  data = model_set,
+                  data = trainsample,
                   method = "rf",
                   na.action=na.omit,
                   trControl = fitControl)
@@ -81,6 +86,6 @@ setkey(dtest2,pred)
 dtest3 <- dtest2[dtest2$pred == 1]
 
 pred3 <- predict(lm_tuned, dtest3)
-rmse <- qrt(mean((dtest3$Sum_claim_amount-pred3)^2))
+rmse <- sqrt(mean((dtest3$Sum_claim_amount-pred3)^2))
 rmse
 
