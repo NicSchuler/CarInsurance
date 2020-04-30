@@ -7,6 +7,8 @@ numcols = c("pol_bonus", "pol_duration", "drv_age1", "drv_age2", "drv_age_lic1",
 
 factorcols = c("NULL", "pol_coverage", "pol_pay_freq", "pol_payd", "pol_usage", "drv_drv2", "drv_sex1", "drv_sex2", "vh_fuel", "vh_make", "vh_type", "CountDistinct_id_claim")
 
+factorcol = c("pol_coverage", "pol_pay_freq", "pol_payd", "pol_usage", "drv_drv2", "drv_sex1", "drv_sex2", "vh_fuel", "vh_make", "vh_type", "CountDistinct_id_claim")
+
 MapVars = c("insured_Cars", "Avg_pol_bonus", "Avg_claim_count", "Avg_claim_amount")
 
 # Define UI for application-----------
@@ -75,7 +77,7 @@ shinyUI(fluidPage(
                         actionButton("Filter_Go", "Apply Filter")
                ),
                # Second Main-Tab Trainingdata------------
-               tabPanel("Explore Training Data",
+               tabPanel(" Explore Training Data",
                         tabsetPanel(
                             # First Sub-Tab, Scatterplot-------------
                             tabPanel("Scatterplot",
@@ -156,26 +158,59 @@ shinyUI(fluidPage(
                                        p(strong("Compare densites of training data with actual policies")),
                                        p("Both data sets are filtered according to the filter tab."),
                                        br(),
-                                       plotOutput("ComDensPlot")
+                                       plotOutput("ComDensPlot"),
+                                       br(),
+                                       downloadButton("downloadDensity", "Download Plot")
                                      )
-                        )),
+                          )),
                         
-                        # Second Sub-Tab, Categories---------
-                        tabPanel("Categories",
+                          # Second Sub-Tab, Categories---------
+                          tabPanel("Mass",
                                  br(),
                                  sidebarLayout(
                                    sidebarPanel(
-                                     p(strong("Choose the Variable you want to compare"))
+                                     p(strong("Choose the Variable you want to compare")),
+                                     br(),
+                                     selectInput("CompMass_Var", "Variable to compare", choices = factorcol, selected = "pol_coverage"),
+                                     br(),
+                                     actionButton("ComMass_Go", "Create Plot")
                                    ),
                                    mainPanel(
                                      p(strong("Compare densites of training data with actual policies")),
+                                     p("Both data sets are filtered according to the filter tab."),
                                      br(),
-                                     p("Both data sets are filtered according to the filter tab.")
+                                     plotOutput("ComMassPlot"),
+                                     br(),
+                                     downloadButton("downloadMass", "Download Plot")
                                    )
-                                 ))
+                          )),
+                          
+                          # Third Sub-Tab, Expected Profit calculator---------
+                          tabPanel("Expected Profit",
+                                   br(),
+                                   p(strong("Estimate profit in general and based on filters")),
+                                   br(),
+                                   p("This page allows you to estimate the profits for the current year, so that you do not have bad surprises when you see the financial report."),
+                                   fluidPage(
+                                     fluidRow(
+                                       column(6,
+                                              plotOutput("GenProfitPlot")),
+                                       column(6,
+                                              plotOutput("FilProfitPlot"))
+                                     ),
+                                     fluidRow(
+                                       column(2, offset=2,
+                                              downloadButton("downloadGenProfitPlot", "Download General Profit Plot")),
+                                       column(2, offset=4,
+                                              downloadButton("downloadFilProfitPlot", "Download filtered Profit Plot"),
+                                              verbatimTextOutput("asdfasdf"))
+                                     
+                                   
+                                   
+                                   )
+                          ))
                         
-                        
-                        )),
+               )),
                
                # Fourth Main-Tab Premium Calculator------------
                tabPanel("Premium Calculator"),

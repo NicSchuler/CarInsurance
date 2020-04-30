@@ -39,6 +39,14 @@ departements.df = merge(departements.points, departements@data, by="id")
 
 departements.dt = setDT(departements.df)
 
+# Load the models
+load("../../Data/prototypmodelle (rf und lm)/lm_tuned.RData")
+load("../../Data/prototypmodelle (rf und lm)/rf_tuned.RData")
+
+pg17testyear4corr$claimPrediction = predict(rf_tuned, pg17testyear4corr)
+pg17testyear4corr$Premium = predict(lm_tuned, pg17testyear4corr)
+
+
 # Actual Server-------------
 
 # Build the server
@@ -78,7 +86,7 @@ shinyServer(function(input, output) {
                         drv_age1 >= input$Filter_drv_age1[1] & drv_age1 <= input$Filter_drv_age1[2] &
                         (drv_age2 >= input$Filter_drv_age2[1] & drv_age2 <= input$Filter_drv_age2[2] | drv_age2 == 0) &
                         drv_sex1 %in% input$Filter_drv_sex1 &
-                        drv_sex2 %in% c(input$Filter_drv_sex2, 0) &
+                        drv_sex2 %in% c(input$Filter_drv_sex2, "") &
                         drv_age_lic1 >= input$Filter_drv_age_lic1[1] & drv_age_lic1 <= input$Filter_drv_age_lic1[2] &
                         (drv_age_lic2 >= input$Filter_drv_age_lic2[1] & drv_age_lic2 <= input$Filter_drv_age_lic2[2] | drv_age_lic2 == 0) &
                         vh_age >= input$Filter_vh_age[1] & vh_age <= input$Filter_vh_age[2] &
@@ -128,7 +136,7 @@ shinyServer(function(input, output) {
     
     # Download Button for Scatterplot
     output$downloadScatter <- downloadHandler(
-        filename = function() { paste('CleanDataScatterplot', Sys.Date(), '.png', sep='') },
+        filename = function() { paste('CleanDataScatterplot_', Sys.Date(), '.png', sep='') },
         content = function(file) {
             ggsave(file,Scatterplot())
         }
@@ -174,7 +182,7 @@ shinyServer(function(input, output) {
     
     # Download Button for Map Plot
     output$downloadMap <- downloadHandler(
-        filename = function() { paste('CleanDataMap', Sys.Date(), '.png', sep='') },
+        filename = function() { paste('CleanDataMap ', Sys.Date(), '.png', sep='') },
         content = function(file) {
             ggsave(file,MapPlot())
         }
@@ -201,12 +209,109 @@ shinyServer(function(input, output) {
         )
     })
     
-    output$ComDensPlot = renderPlot({
-        ggplot(DensDf(), aes(x=x, y=y, color = y)) +
-            geom_line(size=1.5) +
-            scale_color_gradient2(midpoint=0, low="red", mid="darkgrey", high="green4", space ="Lab") +
-            labs(x=paste(input$CompDensity_Var), y="Deviance from Trainig-Density") +
-            theme_classic()
-    })
+    DensityPlot = reactive({ggplot(DensDf(), aes(x=x, y=y, color = y)) +
+        geom_line(size=1.5) +
+        scale_color_gradient2(midpoint=0, low="red", mid="darkgrey", high="green4", space ="Lab") +
+        labs(x=paste(input$CompDensity_Var), y="Deviance from Trainig-Density", title = paste("Compare the frequencies (density) of ", input$CompDensity_Var,"'s values", sep="")) +
+        theme_classic()})
+    
+    output$ComDensPlot = renderPlot({DensityPlot()})
+    
+    # Download Button for Density Plot
+    output$downloadDensity <- downloadHandler(
+        filename = function() { paste('CompareDensityPlot_', Sys.Date(), '.png', sep='') },
+        content = function(file) {
+            ggsave(file,DensityPlot())
+        }
+    )
+    
+    # Compare Mass Plot - Output---------
+    MassTrain = eventReactive(input$ComMass_Go, {
+        d = as.data.frame(filtered())
+        MassTrain = table(d[,(input$CompMass_Var)])/nrow(filtered())})
+    MassTest = eventReactive(input$ComMass_Go, {
+        e = as.data.frame(filteredtest4())
+        MassTest = table(e[,(input$CompMass_Var)])/nrow(filteredtest4())})
+    CompMasses = reactive({as.data.frame((MassTest() - MassTrain())*nrow(filteredtest4()))})
+    
+    MassPlot = reactive({ggplot(CompMasses(), aes(x=Var1, fill = Freq)) +
+        geom_bar(aes(weight=Freq)) +
+        scale_fill_gradient2(midpoint=0, low="red", mid="darkgrey", high="green4", space ="Lab") +
+        labs(x=paste(input$CompMass_Var), y="Deviance from Trainig-Mass", title = paste("Compare the frequencies of ", input$CompMass_Var,"'s categories", sep="")) +
+        theme_classic()})
+    
+    output$ComMassPlot = renderPlot({MassPlot()})
+    
+    # Download Button for Mass Plot
+    output$downloadMass <- downloadHandler(
+        filename = function() { paste('CompareMassPlot_', Sys.Date(), '.png', sep='') },
+        content = function(file) {
+            ggsave(file,MassPlot())
+        }
+    )
+    
+    
+    # General Profit Plot--------------
+    GeneralRevenue = sum(pg17testyear4corr$Premium)
+    GeneralClaimsExp = sum(pg17testyear4corr$Premium[pg17testyear4corr$claimPrediction==1])
+    GeneralProfit = GeneralRevenue - GeneralClaimsExp
+    
+    KPI = c("Revenue","Expenditures","Profit")
+    Value = c(GeneralRevenue, GeneralClaimsExp, GeneralProfit)
+    GeneralFin = data.frame(KPI, Value)
+    GeneralFin$Value = round(as.integer(paste(GeneralFin$Value))/1000,0)
+    
+    options(scipen=999)
+    
+    GeneralFinPlot = ggplot(GeneralFin, aes(x=KPI, y=Value)) +
+        geom_col(aes(fill=KPI), show.legend = FALSE) +
+        geom_text(aes(label=Value), vjust=1.6, color="white", size=5.5)+
+        scale_x_discrete(limits=c("Revenue", "Expenditures", "Profit")) +
+        scale_fill_manual(values = c("Revenue"="black", "Expenditures"= "red", "Profit"=ifelse(GeneralProfit>=0,"green4","red"))) +
+        labs(x=element_blank(), y="in kEuros", title = "General Revenue, Expenditures and Profit") +
+        theme_classic()
+    
+    output$GenProfitPlot = renderPlot({GeneralFinPlot})
+    
+    # Download Button for Density Plot
+    output$downloadGenProfitPlot <- downloadHandler(
+        filename = function() { paste('GeneralProfitPlot_', Sys.Date(), '.png', sep='') },
+        content = function(file) {
+            ggsave(file,GeneralFinPlot)
+        }
+    )
+    
+    
+    # Filtered Profit Plot--------------
+    FilteredRevenue = reactive({sum(filteredtest4()$Premium)})
+    FilteredClaimsExp = reactive({sum(filteredtest4()$Premium[filteredtest4()$claimPrediction==1])})
+    FilteredProfit = reactive({FilteredRevenue() - FilteredClaimsExp()})
+    
+    FilKPI = c("Revenue","Expenditures","Profit")
+    FilValue = reactive({c(FilteredRevenue(), FilteredClaimsExp(), FilteredProfit())})
+    FilteredFin = reactive({data.frame(FilKPI, FilValue=round(as.integer(paste(FilValue()))/1000,0))})
+    
+    options(scipen=999)
+    
+    FilteredFinPlot = reactive({ggplot(FilteredFin(), aes(x=FilKPI, y=FilValue)) +
+        geom_col(aes(fill=FilKPI), show.legend = FALSE) +
+        geom_text(aes(label=FilValue), vjust=1.6, color="white", size=5.5)+
+        scale_x_discrete(limits=c("Revenue", "Expenditures", "Profit")) +
+        scale_fill_manual(values = c("Revenue"="black", "Expenditures"= "red", "Profit"="green4")) +
+        labs(x=element_blank(), y="in kEuros", title = "Filtered Revenue, Expenditures and Profit") +
+        theme_classic()})
+    
+    output$FilProfitPlot = renderPlot({FilteredFinPlot()})
+    
+    # Download Button for Density Plot
+    output$downloadFilProfitPlot <- downloadHandler(
+        filename = function() { paste('GeneralProfitPlot_', Sys.Date(), '.png', sep='') },
+        content = function(file) {
+            ggsave(file,FilteredFinPlot)
+        }
+    )
+    
+    output$asdfasdf = renderPrint({nrow(filteredtest4())})
+    
     
 })
