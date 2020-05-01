@@ -21,7 +21,6 @@ MatchedData$Departement = as.factor(str_sub(MatchedData$pol_insee_code, end=-4))
 
 load("../../Data/pg17testyear4.Rdata")
 pg17testyear4 = setDT(pg17testyear4)
-pg17testyear4$drv_drv2 = factor(pg17testyear4$drv_drv2, labels=c("1 Driver", "2 Drivers"))
 pg17testyear4$pol_insee_code = as.character(pg17testyear4$pol_insee_code)
 pg17testyear4$Departement = as.factor(str_sub(pg17testyear4$pol_insee_code, end=-4))
 
@@ -40,11 +39,13 @@ departements.df = merge(departements.points, departements@data, by="id")
 departements.dt = setDT(departements.df)
 
 # Load the models
-load("../../Data/prototypmodelle (rf und lm)/lm_tuned.RData")
-load("../../Data/prototypmodelle (rf und lm)/rf_tuned.RData")
+load("../../Data/prototypmodelle (rf und lm)/lm_tuned2.RData")
+load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
 
-pg17testyear4corr$claimPrediction = predict(rf_tuned, pg17testyear4corr)
-pg17testyear4corr$Premium = predict(lm_tuned, pg17testyear4corr)
+pg17testyear4corr$pred = predict(rf_tuned, pg17testyear4corr)
+pg17testyear4corr$Premium = predict(lm_tuned3, pg17testyear4corr)
+
+pg17testyear4corr$drv_drv2 = factor(pg17testyear4corr$drv_drv2, labels=c("1 Driver", "2 Drivers"))
 
 
 # Actual Server-------------
@@ -253,7 +254,7 @@ shinyServer(function(input, output) {
     
     # General Profit Plot--------------
     GeneralRevenue = sum(pg17testyear4corr$Premium)
-    GeneralClaimsExp = sum(pg17testyear4corr$Premium[pg17testyear4corr$claimPrediction==1])
+    GeneralClaimsExp = sum(pg17testyear4corr$Premium[pg17testyear4corr$pred==1])
     GeneralProfit = GeneralRevenue - GeneralClaimsExp
     
     KPI = c("Revenue","Expenditures","Profit")
@@ -284,7 +285,7 @@ shinyServer(function(input, output) {
     
     # Filtered Profit Plot--------------
     FilteredRevenue = reactive({sum(filteredtest4()$Premium)})
-    FilteredClaimsExp = reactive({sum(filteredtest4()$Premium[filteredtest4()$claimPrediction==1])})
+    FilteredClaimsExp = reactive({sum(filteredtest4()$Premium[filteredtest4()$pred==1])})
     FilteredProfit = reactive({FilteredRevenue() - FilteredClaimsExp()})
     
     FilKPI = c("Revenue","Expenditures","Profit")

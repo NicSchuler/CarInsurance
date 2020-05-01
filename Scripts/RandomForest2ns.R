@@ -75,19 +75,21 @@ fitControl <- trainControl(## 10-fold CV
   ## repeated three times
   repeats = 10)
 
-lm_tuned <- train(Sum_claim_amount ~.,
-                  data = dtrain2,
-                  method = "lm",
-                  na.action=na.omit,
-                  trControl = fitControl)
+# lm_tuned <- train(Sum_claim_amount ~.,
+#                   data = dtrain2,
+#                   method = "lm",
+#                   na.action=na.omit,
+#                   trControl = fitControl)
 
-save(lm_tuned, file = "lm_tuned2.RData")
+lm_tuned3 <- lm(Sum_claim_amount ~., data = dtrain2,)
+
+save(lm_tuned3, file = "lm_tuned2.RData")
 
 # table with only positively predicted testing data
 setkey(dtest2,pred)
 dtest3 <- dtest2[dtest2$pred == 1]
 
-pred3 <- predict(lm_tuned, dtest3)
-rmse <- sqrt(mean((dtest3$Sum_claim_amount-pred3)^2))
+pred3 <- predict(lm_tuned3, dtest2)
+rmse <- sqrt(mean((dtest2$Sum_claim_amount-pred3)^2))
 rmse
 
