@@ -24,12 +24,13 @@ ui<-shinyUI(fluidPage(
                                               )
                                           )
                                 ),
+                                # numericInput("Information_pol_insee_code", "In which deprartment do you life:", value=83, min=0, max=96)
                                 wellPanel(radioButtons("Information_drv", "Information about Drivers / Policy-Holders", choices = list("Available", "Not Available"), selected = "Not Available", inline = TRUE),
                                           conditionalPanel(
                                               condition = "input.Information_drv == 'Available'",
                                               flowLayout(
                                                   sliderInput("Information_drv_age1", "Please insert the Driver's age:", min=18, max=105, value=45),
-                                                  checkboxGroupInput("Information_drv_sex1", "Please insert the Driver's sex:", c("M", "W", "Other")),
+                                                  radioButtons("Information_drv_sex1", "Please insert the Driver's sex:", c("M", "W", "Other"),selected="M"),
                                                   numericInput("Information_drv_age_lic1", "Please insert the age of the Driver's licence:", value=20, min=0, max=87)
                                               )
                                           )
@@ -54,7 +55,7 @@ ui<-shinyUI(fluidPage(
                                               )
                                           )
                                 )
-                            ), actionButton("safe", "Safe values!")
+                            ),actionButton("safe", "Safe values!")
                    ),
                    # Third Sub-Tab, Calculation---------
                    tabPanel("Calculation",
@@ -63,20 +64,23 @@ ui<-shinyUI(fluidPage(
                             br(),
                             "The insurance premium for your", "", "will amount up to:",
                             br(),
-                            dataTableOutput('displayDf')
+                            verbatimTextOutput("Prediction")
                    )
-
+                   
                )
     )
 ))
 
-server<- function(input,output,session){
-    rf_tuned <- load("Data/rf_tuned_shiny.RData")
-    observeEvent(input$safe, {
+server<- function(input,output){
+    rf_tuned <- readRDS("Data/rf_tuned_shiny.rds")
+    lm_tuned <- readRDS("Data/lm_tuned_only_pos.rds")
+    info<- observeEvent(input$safe, {
+        
         # fetching the input
-        pol_coverage <- as.factor(input$Information_pol_coverage)
-        pol_usage <- as.factor(input$Information_pol_usage)
-        drv_sex1 <- as.factor(input$Information_drv_sex1)
+        pol_coverage <- input$Information_pol_coverage
+        pol_usage <- input$Information_pol_usage
+        # pol_insee_code <- input$Information_pol_insee_code
+        drv_sex1 <- input$Information_drv_sex1
         drv_age_lic1 <- as.integer(input$Information_drv_age_lic1)
         drv_age1 <- as.integer(input$Information_drv_age1)
         vh_din <- as.integer(input$Information_vh_din)
@@ -84,13 +88,29 @@ server<- function(input,output,session){
         vh_value <- as.integer(input$Information_vh_value)
         vh_weight <- as.integer(input$Information_vh_weight)
         
-        info <- as.data.frame(cbind(pol_coverage, pol_usage, drv_sex1, drv_age_lic1, drv_age1, vh_din, vh_speed, vh_value, vh_weight))
-        print(info)
-        # info$pred <- as.factor("")
-        # saving with the action button
-        # observeEvent({input$safe}, { # && input$ready?
-        pred <- predict(rf_tuned, newdata = as.data.frame.array(info))
-        # output$Pred <- renderPrint(pred())
+        
+        # binding to data frame
+        info <- data.frame(pol_coverage, pol_usage, drv_age1, drv_sex1, drv_age_lic1, vh_din, vh_speed, vh_value, vh_weight)
+        # pol_insee_code,
+        
+        # preparing for prediction
+        info$pol_coverage <- as.factor(info$pol_coverage)
+        info$pol_usage <- as.factor(info$pol_usage)
+        info$drv_sex1 <- as.factor(info$drv_sex1)
+        # info$pol_insee_code <- as.factor(info$pol_insee_code)
+        
+        
+        
+        pos_or_neg <- predict(rf_tuned, newdata = info)
+        info$pred <- pos_or_neg
+        pred <- predict(lm_tuned, newdata = info)
+        
+        
+        lm_tuned <- readRDS("Data/lm_tuned_only_pos.rds")
+    })    
+    
+    output$Prediction <- renderPrint({
+        pred1()
     })
 }
 

@@ -1,8 +1,3 @@
-# Achtung produziert rmse von fast 1500 unter anderem, weil random forest nur mit 150
-# Beobachtungen läuft. Anpassungen in Zeile 28 und 32 nötig um Modell mit allen trainings-
-# daten zu trainieren.
-
-
 rm(list = ls())
 library(data.table)
 library(randomForest)
@@ -37,7 +32,7 @@ end.time <- Sys.time()
 time.taken <- end.time - start.time
 time.taken 
 
-save(rf_tuned, file = "rf_tuned.RData")
+saveRDS(rf_tuned, file = "rf_tuned.rds")
 
 # tuned model with 10 fold cv repeated 10 time takes 
 # 17 sec for n = 100 
