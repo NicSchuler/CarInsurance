@@ -19,15 +19,15 @@ MatchedData$claim = as.factor(ifelse(MatchedData$Sum_claim_amount > 0, 1,0))
 MatchedData$pol_insee_code = as.character(MatchedData$pol_insee_code)
 MatchedData$Departement = as.factor(str_sub(MatchedData$pol_insee_code, end=-4))
 
-# load("../../Data/pg17testyear4.Rdata")
-# pg17testyear4 = setDT(pg17testyear4)
-# pg17testyear4$pol_insee_code = as.character(pg17testyear4$pol_insee_code)
-# pg17testyear4$Departement = as.factor(str_sub(pg17testyear4$pol_insee_code, end=-4))
+load("../../Data/pg17testyear4.Rdata")
+pg17testyear4 = setDT(pg17testyear4)
+pg17testyear4$pol_insee_code = as.character(pg17testyear4$pol_insee_code)
+pg17testyear4$Departement = as.factor(str_sub(pg17testyear4$pol_insee_code, end=-4))
 
-# # Create a subsample for the portfolio management tab
-# set.seed(1)
-# pg17testyear4corr = sample_n(pg17testyear4, 20000, replace=FALSE)
-# pg17testyear4corr = setDT(pg17testyear4corr)
+# Create a subsample for the portfolio management tab
+set.seed(1)
+pg17testyear4corr = sample_n(pg17testyear4, 20000, replace=FALSE)
+pg17testyear4corr = setDT(pg17testyear4corr)
 
 
 # Load the data für the map
@@ -39,47 +39,30 @@ departements.df = merge(departements.points, departements@data, by="id")
 departements.dt = setDT(departements.df)
 
 # Load the models
-# load("../../Data/prototypmodelle (rf und lm)/lm_tuned4.RData")
-# load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
-# 
-# Verwaltungsaufwand = 200
-# Margin=0.25
-# 
-# pg17testyear4corr$pred = predict(rf_tuned, pg17testyear4corr)
-# pg17testyear4corr$fairPremium = exp(predict(lm_tuned4, pg17testyear4corr))
-# pg17testyear4corr$Premium = (pg17testyear4corr$fairPremium+Verwaltungsaufwand)*(1+Margin)
-# 
-# pg17testyear4corr$drv_drv2 = factor(pg17testyear4corr$drv_drv2, labels=c("1 Driver", "2 Drivers"))
-# 
-# Contracts = pg17testyear4corr %>%
-#     mutate(Name=id_policy) %>%
-#     select(c("Name", "vh_make", "pol_coverage", "pol_usage", "drv_drv2", "drv_sex1", "drv_age_lic1", "vh_din", "vh_speed", "vh_value", "vh_weight", "pred", "fairPremium", "Premium"))
+load("../../Data/prototypmodelle (rf und lm)/lm_tuned4.RData")
+load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
 
-# save(Contracts, file="../../Contracts.RData")
+Verwaltungsaufwand = 200
+Margin=0.25
 
-load("../../Data/Contracts.RData")
-Contracts = setDT(Contracts)
+pg17testyear4corr$pred = predict(rf_tuned, pg17testyear4corr)
+pg17testyear4corr$fairPremium = exp(predict(lm_tuned4, pg17testyear4corr))
+pg17testyear4corr$Premium = (pg17testyear4corr$fairPremium+Verwaltungsaufwand)*(1+Margin)
 
-Zwischentabelle = Contracts[1]
+pg17testyear4corr$drv_drv2 = factor(pg17testyear4corr$drv_drv2, labels=c("1 Driver", "2 Drivers"))
 
+Zwischentabelle = pg17testyear4corr[1]
 
 # Actual Server-------------
 
 # Build the server
 shinyServer(function(input, output) {
     
-    # Zwischentabelle = reactiveValues(Name=NULL, vh_make=NULL, pol_coverage=NULL, pol_usage=NULL, drv_drv2=NULL, drv_sex1=NULL, drv_age_lic1=NULL, vh_din=NULL, vh_speed=NULL, vh_value=NULL, vh_weight=NULL, pred=NULL, fairPremium=NULL, Premium=NULL)
-    
-    
-    
-    # unfilteredtest4 = observeEvent(input$AcceptContract_Go, {
-    #     unfilteredtest4 <- isolate({
-    #         newLine <- Zwischentabelle
-    #         rbindlist(l=list(Contracts, Zwischentabelle), use.names = TRUE)
-    #     })
-    # })
-    
-    
+    pg17testyear4corr = eventReactive(input$AcceptContract_Go,{
+        oldpg17 = reactive({pg17testyear4corr()})
+        a=reactive({rbind(oldpg17(),Zwischentabelle)})
+        return(a)
+    })
     # Data Filters------------
     # Filter the traindata according to "Filter"-Panel
     filtered = eventReactive(input$Filter_Go, {
@@ -107,15 +90,24 @@ shinyServer(function(input, output) {
     
     # Filter the testyear1 data according to "Filter"-Panel
     filteredtest4 = eventReactive(input$Filter_Go, {
-        Contracts[pol_coverage %in% input$Filter_pol_coverage &
-                  pol_usage %in% input$Filter_pol_usage &
-                  drv_drv2 %in% input$Filter_drv_drv2 &
-                  drv_sex1 %in% input$Filter_drv_sex1 &
-                  drv_age_lic1 >= input$Filter_drv_age_lic1[1] & drv_age_lic1 <= input$Filter_drv_age_lic1[2] &
-                  vh_din >= input$Filter_vh_din[1] & vh_din <= input$Filter_vh_din[2] &
-                  vh_speed >= input$Filter_vh_speed[1] & vh_speed <= input$Filter_vh_speed[2] &
-                  vh_weight >= input$Filter_vh_weight[1] & vh_weight <= input$Filter_vh_weight[2] &
-                  vh_value >= input$Filter_vh_value[1] & vh_value <= input$Filter_vh_value[2]]
+        pg17testyear4corr = reactive({pg17testyear4corr() %>%
+            filter(pol_bonus >= input$Filter_pol_bonus[1] & pol_bonus <= input$Filter_pol_bonus[2] &
+                        pol_coverage %in% input$Filter_pol_coverage &
+                        pol_usage %in% input$Filter_pol_usage &
+                        drv_drv2 %in% input$Filter_drv_drv2 &
+                        drv_age1 >= input$Filter_drv_age1[1] & drv_age1 <= input$Filter_drv_age1[2] &
+                        (drv_age2 >= input$Filter_drv_age2[1] & drv_age2 <= input$Filter_drv_age2[2] | drv_age2 == 0) &
+                        drv_sex1 %in% input$Filter_drv_sex1 &
+                        drv_sex2 %in% c(input$Filter_drv_sex2, "") &
+                        drv_age_lic1 >= input$Filter_drv_age_lic1[1] & drv_age_lic1 <= input$Filter_drv_age_lic1[2] &
+                        (drv_age_lic2 >= input$Filter_drv_age_lic2[1] & drv_age_lic2 <= input$Filter_drv_age_lic2[2] | drv_age_lic2 == 0) &
+                        vh_age >= input$Filter_vh_age[1] & vh_age <= input$Filter_vh_age[2] &
+                        vh_cyl >= input$Filter_vh_cyl[1] & vh_cyl <= input$Filter_vh_cyl[2] &
+                        vh_din >= input$Filter_vh_din[1] & vh_din <= input$Filter_vh_din[2] &
+                        vh_speed >= input$Filter_vh_speed[1] & vh_speed <= input$Filter_vh_speed[2] &
+                        vh_type %in% input$Filter_vh_type &
+                        vh_weight >= input$Filter_vh_weight[1] & vh_weight <= input$Filter_vh_weight[2] &
+                        vh_value >= input$Filter_vh_value[1] & vh_value <= input$Filter_vh_value[2])})
         
     })
     
@@ -272,26 +264,25 @@ shinyServer(function(input, output) {
     
     
     # General Profit Plot--------------
-    GeneralRevenue = sum(Contracts$Premium)
-    GeneralExpenditures = sum(Contracts$fairPremium[Contracts$pred==1])+nrow(Contracts)*200
-    GeneralProfit = GeneralRevenue - GeneralExpenditures
+    GeneralRevenue = reactive({sum(pg17testyear4corr()[,Premium])})
+    GeneralExpeditures = reactive({sum(pg17testyear4corr()$fairPremium[pg17testyear4corr()$pred==1])+nrow(pg17testyear4corr())*200})
+    GeneralProfit = reactive({GeneralRevenue() - GeneralExpeditures()})
     
-    KPI = c("Revenue","Expenditures","Profit")
-    Value = c(GeneralRevenue, GeneralExpenditures, GeneralProfit)
-    GeneralFin = data.frame(KPI, Value)
-    GeneralFin$Value = round(as.integer(paste(GeneralFin$Value))/1000,0)
+    GeneralKPI = c("Revenue","Expenditures","Profit")
+    GeneralValue = reactive({c(GeneralRevenue(), GeneralExpeditures(), GeneralProfit())})
+    GeneralFin = reactive({data.frame(GeneralKPI, GeneralValue=round(as.integer(paste(GeneralValue()))/1000,0))})
     
     options(scipen=999)
     
-    GeneralFinPlot = ggplot(GeneralFin, aes(x=KPI, y=Value)) +
-        geom_col(aes(fill=KPI), show.legend = FALSE) +
-        geom_text(aes(label=Value), vjust=1.6, color="white", size=5.5)+
+    GeneralFinPlot = reactive({ggplot(GeneralFin(), aes(x=GeneralKPI, y=GeneralValue)) +
+        geom_col(aes(fill=GeneralKPI), show.legend = FALSE) +
+        geom_text(aes(label=GeneralValue), vjust=1.6, color="white", size=5.5)+
         scale_x_discrete(limits=c("Revenue", "Expenditures", "Profit")) +
         scale_fill_manual(values = c("Revenue"="black", "Expenditures"= "red", "Profit"=ifelse(GeneralProfit>=0,"green4","red"))) +
         labs(x=element_blank(), y="in kEuros", title = "General Revenue, Expenditures and Profit") +
-        theme_classic()
+        theme_classic()})
     
-    output$GenProfitPlot = renderPlot({GeneralFinPlot})
+    output$GenProfitPlot = renderPlot({GeneralFinPlot()})
     
     # Download Button for Density Plot
     output$downloadGenProfitPlot <- downloadHandler(
@@ -304,11 +295,11 @@ shinyServer(function(input, output) {
     
     # Filtered Profit Plot--------------
     FilteredRevenue = reactive({sum(filteredtest4()$Premium)})
-    FilteredExpenditures = reactive({sum(filteredtest4()$fairPremium[filteredtest4()$pred==1])+nrow(filteredtest4())*200})
-    FilteredProfit = reactive({FilteredRevenue() - FilteredExpenditures()})
+    FilteredExpeditures = reactive({sum(filteredtest4()$fairPremium[filteredtest4()$pred==1])+nrow(filteredtest4())*200})
+    FilteredProfit = reactive({FilteredRevenue() - FilteredExpeditures()})
     
     FilKPI = c("Revenue","Expenditures","Profit")
-    FilValue = reactive({c(FilteredRevenue(), FilteredExpenditures(), FilteredProfit())})
+    FilValue = reactive({c(FilteredRevenue(), FilteredExpeditures(), FilteredProfit())})
     FilteredFin = reactive({data.frame(FilKPI, FilValue=round(as.integer(paste(FilValue()))/1000,0))})
     
     options(scipen=999)
@@ -332,19 +323,10 @@ shinyServer(function(input, output) {
     )
     
     # KPI - Text Outputs--------------
-    output$NmbContrTot = renderText({nrow(Contracts)})
+    output$NmbContrTot = renderText({nrow(pg17testyear4corr())})
     output$NmbContrFil = renderText({nrow(filteredtest4())})
-    output$ROSTot = renderText({paste(round((GeneralProfit/GeneralRevenue)*100,2),"%")})
+    output$ROSTot = renderText({paste(round((GeneralProfit()/GeneralRevenue())*100,2),"%")})
     output$ROSFil = renderText({paste(round((FilteredProfit()/FilteredRevenue())*100,2),"%")})
-    output$AvgProfTot = renderText({paste(round((GeneralProfit/nrow(Contracts)),2)," Euros")})
+    output$AvgProfTot = renderText({paste(round((GeneralProfit()/nrow(pg17testyear4corr())),2)," Euros")})
     output$AvgProfFil = renderText({paste(round((FilteredProfit()/nrow(filteredtest4())),2)," Euros")})
-    
-    # Data Table (Contracts) output---------
-    # Create the data table for the training data
-    # output$contractsdatatable = renderDataTable({
-    #     unfilteredtest4()
-    # }, options=list(searching=FALSE, paging=TRUE), rownames=FALSE, filter="top")
-    # 
-    
-    
 })

@@ -3,13 +3,11 @@ library(shiny)
 library(tidyverse)
 
 # Drop-Down Lists-----------
-Trainnumcols = c("pol_bonus", "pol_duration", "drv_age1", "drv_age2", "drv_age_lic1", "drv_age_lic2", "vh_age", "vh_cyl", "vh_din", "vh_speed", "vh_value", "vh_weight", "Sum_claim_amount")
+numcols = c("pol_bonus", "pol_duration", "drv_age1", "drv_age2", "drv_age_lic1", "drv_age_lic2", "vh_age", "vh_cyl", "vh_din", "vh_speed", "vh_value", "vh_weight", "Sum_claim_amount")
 
-Trainfactorcols = c("NULL", "pol_coverage", "pol_pay_freq", "pol_payd", "pol_usage", "drv_drv2", "drv_sex1", "drv_sex2", "vh_fuel", "vh_make", "vh_type", "CountDistinct_id_claim")
+factorcols = c("NULL", "pol_coverage", "pol_pay_freq", "pol_payd", "pol_usage", "drv_drv2", "drv_sex1", "drv_sex2", "vh_fuel", "vh_make", "vh_type", "CountDistinct_id_claim")
 
-Testnumcols = c("drv_age_lic1", "vh_din", "vh_speed", "vh_value", "vh_weight")
-
-Testfactorcols = c("pol_coverage", "pol_usage", "drv_drv2", "drv_sex1")
+factorcol = c("pol_coverage", "pol_pay_freq", "pol_payd", "pol_usage", "drv_drv2", "drv_sex1", "drv_sex2", "vh_fuel", "vh_make", "vh_type", "CountDistinct_id_claim")
 
 MapVars = c("insured_Cars", "Avg_pol_bonus", "Avg_claim_count", "Avg_claim_amount")
 
@@ -87,10 +85,10 @@ shinyUI(fluidPage(
                                      sidebarLayout(
                                          sidebarPanel(
                                              p(strong("Variables for the Plot")),
-                                             selectInput("Scatter_X_Axis", "Variable for X-Axis", choices = Trainnumcols, selected = "vh_speed"),
-                                             selectInput("Scatter_Y_Axis", "Variable for Y-Axis", choices = Trainnumcols, selected = "Sum_claim_amount"),
-                                             selectInput("Scatter_Color", "Variable for color", choices = Trainfactorcols, selected = "NULL"),
-                                             selectInput("Scatter_Shape", "Variable for shape", choices = Trainfactorcols, selected = "NULL"),
+                                             selectInput("Scatter_X_Axis", "Variable for X-Axis", choices = numcols, selected = "vh_speed"),
+                                             selectInput("Scatter_Y_Axis", "Variable for Y-Axis", choices = numcols, selected = "Sum_claim_amount"),
+                                             selectInput("Scatter_Color", "Variable for color", choices = factorcols, selected = "NULL"),
+                                             selectInput("Scatter_Shape", "Variable for shape", choices = factorcols, selected = "NULL"),
                                              actionButton("Scatter_Go", "Create Plot"),
                                              br(), br(),
                                              radioButtons("Scatter_Smooth", "Add Regression", choices = c("Yes", "No"), selected = "No", inline = TRUE),
@@ -152,7 +150,7 @@ shinyUI(fluidPage(
                                      sidebarPanel(
                                        p(strong("Choose the Variable you want to compare")),
                                        br(),
-                                       selectInput("CompDensity_Var", "Variable to compare", choices = Testnumcols, selected = "vh_speed"),
+                                       selectInput("CompDensity_Var", "Variable to compare", choices = numcols, selected = "vh_speed"),
                                        br(),
                                        actionButton("ComDensity_Go", "Create Plot")
                                      ),
@@ -173,7 +171,7 @@ shinyUI(fluidPage(
                                    sidebarPanel(
                                      p(strong("Choose the Variable you want to compare")),
                                      br(),
-                                     selectInput("CompMass_Var", "Variable to compare", choices = Testfactorcols, selected = "pol_coverage"),
+                                     selectInput("CompMass_Var", "Variable to compare", choices = factorcol, selected = "pol_coverage"),
                                      br(),
                                      actionButton("ComMass_Go", "Create Plot")
                                    ),
@@ -255,20 +253,12 @@ shinyUI(fluidPage(
                                               textOutput("AvgProfFil"))
                                      ),
                                      
+                                              
                                      
-                                     
-                                   )
-                          ),
-                          
-                          # Fourth Sub-Tab, Contracts Data Table------------
-                          tabPanel("Data Table",
-                                   br(),
-                                   mainPanel(
-                                     dataTableOutput("contractsdatatable")
-                                   )
                           )
-                          
-                        )),
+                          )
+                        
+               )),
                
                # Fourth Main-Tab Contract Control------------
                tabPanel("Contract Control",
