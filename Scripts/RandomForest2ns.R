@@ -69,11 +69,11 @@ dtrain2 = dtrain2 %>% select(-dummy_claim)
 # dtrain4 <- dtrain3[,c(6,11,16,18,22,28,30,31,33)]
 
 # tuning regression
-fitControl <- trainControl(## 10-fold CV
-  method = "repeatedcv",
-  number = 10,
-  ## repeated three times
-  repeats = 10)
+# fitControl <- trainControl(## 10-fold CV
+#   method = "repeatedcv",
+#   number = 10,
+#   ## repeated three times
+#   repeats = 10)
 
 # lm_tuned <- train(Sum_claim_amount ~.,
 #                   data = dtrain2,
@@ -81,15 +81,15 @@ fitControl <- trainControl(## 10-fold CV
 #                   na.action=na.omit,
 #                   trControl = fitControl)
 
-lm_tuned3 <- lm(Sum_claim_amount ~., data = dtrain2,)
+lm_tuned4 <- lm(log(Sum_claim_amount+1) ~., data = dtrain2,)
 
-save(lm_tuned3, file = "lm_tuned2.RData")
+save(lm_tuned4, file = "lm_tuned4.RData")
 
 # table with only positively predicted testing data
 setkey(dtest2,pred)
 dtest3 <- dtest2[dtest2$pred == 1]
 
-pred3 <- predict(lm_tuned3, dtest2)
-rmse <- sqrt(mean((dtest2$Sum_claim_amount-pred3)^2))
+pred3 <- predict(lm_tuned4, dtest2)
+rmse <- sqrt(mean((dtest2$Sum_claim_amount-exp(pred3))^2))
 rmse
-
+sum(exp(pred3)) - sum(dtest2$Sum_claim_amount)
