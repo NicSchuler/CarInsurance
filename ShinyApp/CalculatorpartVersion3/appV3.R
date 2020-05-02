@@ -64,7 +64,7 @@ ui<-shinyUI(fluidPage(
                             br(),
                             "The insurance premium for your", "", "will amount up to:",
                             br(),
-                            verbatimTextOutput("Prediction")
+                            textOutput("Prediction")
                    )
                    
                )
@@ -110,7 +110,7 @@ server<- function(input,output){
         premium(pred)
     })    
     
-    output$Prediction <- renderPrint({
+    output$Prediction <- renderText({
         premium()
     })
 }
