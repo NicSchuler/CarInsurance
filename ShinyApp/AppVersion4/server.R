@@ -19,15 +19,15 @@ MatchedData$claim = as.factor(ifelse(MatchedData$Sum_claim_amount > 0, 1,0))
 MatchedData$pol_insee_code = as.character(MatchedData$pol_insee_code)
 MatchedData$Departement = as.factor(str_sub(MatchedData$pol_insee_code, end=-4))
 
-load("../../Data/pg17testyear4.Rdata")
-pg17testyear4 = setDT(pg17testyear4)
-pg17testyear4$pol_insee_code = as.character(pg17testyear4$pol_insee_code)
-pg17testyear4$Departement = as.factor(str_sub(pg17testyear4$pol_insee_code, end=-4))
-
-# Create a subsample for the portfolio management tab
-set.seed(1)
-pg17testyear4corr = sample_n(pg17testyear4, 20000, replace=FALSE)
-pg17testyear4corr = setDT(pg17testyear4corr)
+# load("../../Data/pg17testyear4.Rdata")
+# pg17testyear4 = setDT(pg17testyear4)
+# pg17testyear4$pol_insee_code = as.character(pg17testyear4$pol_insee_code)
+# pg17testyear4$Departement = as.factor(str_sub(pg17testyear4$pol_insee_code, end=-4))
+# 
+# # Create a subsample for the portfolio management tab
+# set.seed(1)
+# Zwischtest = sample_n(Contracts, 200, replace=FALSE)
+# Zwischtest = setDT(Zwischtest)
 
 
 # Load the data für the map
@@ -41,28 +41,107 @@ departements.dt = setDT(departements.df)
 # Load the models
 load("../../Data/prototypmodelle (rf und lm)/lm_tuned4.RData")
 load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
+# 
+# Verwaltungsaufwand = 200
+# Margin=0.25
+# 
+# pg17testyear4corr$pred = predict(rf_tuned, pg17testyear4corr)
+# pg17testyear4corr$fairPremium = exp(predict(lm_tuned4, pg17testyear4corr))
+# pg17testyear4corr$Premium = (pg17testyear4corr$fairPremium+Verwaltungsaufwand)*(1+Margin)
+# 
+# pg17testyear4corr$drv_drv2 = factor(pg17testyear4corr$drv_drv2, labels=c("1 Driver", "2 Drivers"))
+# 
+# Contracts = pg17testyear4corr %>%
+#     mutate(Name=id_policy) %>%
+#     select(c("Name", "vh_make", "pol_coverage", "pol_usage", "drv_drv2", "drv_sex1", "drv_age_lic1", "vh_din", "vh_speed", "vh_value", "vh_weight", "pred", "fairPremium", "Premium"))
 
-Verwaltungsaufwand = 200
-Margin=0.25
+# save(Contracts, file="../../Contracts.RData")
+# 
+# load("../../Data/Contracts.RData")
+# Contracts = setDT(Contracts)
+# 
+# Zwischentabelle = Contracts[1]
 
-pg17testyear4corr$pred = predict(rf_tuned, pg17testyear4corr)
-pg17testyear4corr$fairPremium = exp(predict(lm_tuned4, pg17testyear4corr))
-pg17testyear4corr$Premium = (pg17testyear4corr$fairPremium+Verwaltungsaufwand)*(1+Margin)
+mround <- function(x,base){
+    base*round(x/base)
+}
 
-pg17testyear4corr$drv_drv2 = factor(pg17testyear4corr$drv_drv2, labels=c("1 Driver", "2 Drivers"))
+Zwischentabelle = readRDS("../../Data/zwisch.rds")
 
-Zwischentabelle = pg17testyear4corr[1]
 
 # Actual Server-------------
 
 # Build the server
 shinyServer(function(input, output) {
     
-    pg17testyear4corr = eventReactive(input$AcceptContract_Go,{
-        oldpg17 = reactive({pg17testyear4corr()})
-        a=reactive({rbind(oldpg17(),Zwischentabelle)})
-        return(a)
+    # Premium Calculator
+    zwisch_app <-  eventReactive(input$safe, {
+        
+        # fetching the input
+        pol_coverage <- input$Information_pol_coverage
+        pol_usage <- input$Information_pol_usage
+        # pol_insee_code <- input$Information_pol_insee_code
+        drv_drv2 <- input$Information_drv_drv2
+        drv_sex1 <- input$Information_drv_sex1
+        drv_age_lic1 <- as.integer(input$Information_drv_age_lic1)
+        # drv_age1 <- as.integer(input$Information_drv_age1)
+        vh_din <- as.integer(input$Information_vh_din)
+        vh_speed <- as.integer(input$Information_vh_speed)
+        vh_value <- as.integer(input$Information_vh_value)
+        vh_weight <- as.integer(input$Information_vh_weight)
+        
+        
+        # binding to data frame
+        info <- data.frame(pol_coverage, pol_usage, drv_drv2, drv_sex1, drv_age_lic1, vh_din, vh_speed, vh_value, vh_weight)
+        # pol_insee_code,
+        
+        # preparing for prediction
+        info$pol_coverage <- factor(info$pol_coverage, levels = c("Maxi", "Median1", "Median2", "Mini"))
+        info$pol_usage <- factor(info$pol_usage, levels = c("AllTrips", "Professional", "Retired", "WorkPrivate"))
+        info$drv_drv2 <- factor(info$drv_drv2, levels = c("No","Yes"))
+        info$drv_sex1 <- factor(info$drv_sex1, levels = c("F", "M"))
+        # info$pol_insee_code <- as.factor(info$pol_insee_code)
+        
+        
+        
+        pos_or_neg <- predict(rf_tuned, newdata = info)
+        info$pred <- factor(pos_or_neg, levels = c(0,1))
+        fairPremium <- predict(lm_tuned4, newdata = info)
+        CostumPremium <- (fairPremium+200)*1.25
+        
+        zwisch_app <- info
+        zwisch_app$Name <- input$Name_drv
+        zwisch_app$vh_make <- input$Brand_drv
+        zwisch_app$fairPremium <- fairPremium
+        zwisch_app$Premium <- CostumPremium
+        
+        zwisch_app = setDT(zwisch_app)
+        
+        saveRDS(zwisch_app, file = "../../Data/zwischNEW.rds")
+        
+        return(zwisch_app)
     })
+    
+    premium <- reactive({zwisch_app()$Premium})
+        
+    observeEvent(input$SendRequest, {
+        
+        zwischOld <- readRDS("../../Data/zwisch.rds")
+        zwischNew <- readRDS("../../Data/zwischNEW.rds")
+        zwischOld = setDT(zwischOld)
+        zwischNew = setDT(zwischNew)
+        zwisch = rbind(zwischOld,zwischNew)
+        zwisch = setDT(zwisch)
+        saveRDS(zwisch, file = "../../Data/zwisch.rds")
+        })
+        
+            
+    
+    output$Prediction <- renderText({
+        premium()
+    })
+    
+    
     # Data Filters------------
     # Filter the traindata according to "Filter"-Panel
     filtered = eventReactive(input$Filter_Go, {
@@ -90,25 +169,21 @@ shinyServer(function(input, output) {
     
     # Filter the testyear1 data according to "Filter"-Panel
     filteredtest4 = eventReactive(input$Filter_Go, {
-        pg17testyear4corr = reactive({pg17testyear4corr() %>%
-            filter(pol_bonus >= input$Filter_pol_bonus[1] & pol_bonus <= input$Filter_pol_bonus[2] &
-                        pol_coverage %in% input$Filter_pol_coverage &
-                        pol_usage %in% input$Filter_pol_usage &
-                        drv_drv2 %in% input$Filter_drv_drv2 &
-                        drv_age1 >= input$Filter_drv_age1[1] & drv_age1 <= input$Filter_drv_age1[2] &
-                        (drv_age2 >= input$Filter_drv_age2[1] & drv_age2 <= input$Filter_drv_age2[2] | drv_age2 == 0) &
-                        drv_sex1 %in% input$Filter_drv_sex1 &
-                        drv_sex2 %in% c(input$Filter_drv_sex2, "") &
-                        drv_age_lic1 >= input$Filter_drv_age_lic1[1] & drv_age_lic1 <= input$Filter_drv_age_lic1[2] &
-                        (drv_age_lic2 >= input$Filter_drv_age_lic2[1] & drv_age_lic2 <= input$Filter_drv_age_lic2[2] | drv_age_lic2 == 0) &
-                        vh_age >= input$Filter_vh_age[1] & vh_age <= input$Filter_vh_age[2] &
-                        vh_cyl >= input$Filter_vh_cyl[1] & vh_cyl <= input$Filter_vh_cyl[2] &
-                        vh_din >= input$Filter_vh_din[1] & vh_din <= input$Filter_vh_din[2] &
-                        vh_speed >= input$Filter_vh_speed[1] & vh_speed <= input$Filter_vh_speed[2] &
-                        vh_type %in% input$Filter_vh_type &
-                        vh_weight >= input$Filter_vh_weight[1] & vh_weight <= input$Filter_vh_weight[2] &
-                        vh_value >= input$Filter_vh_value[1] & vh_value <= input$Filter_vh_value[2])})
+        unfilteredtest4()[pol_coverage %in% input$Filter_pol_coverage &
+                  pol_usage %in% input$Filter_pol_usage &
+                  drv_drv2 %in% input$Filter_drv_drv2 &
+                  drv_sex1 %in% input$Filter_drv_sex1 &
+                  drv_age_lic1 >= input$Filter_drv_age_lic1[1] & drv_age_lic1 <= input$Filter_drv_age_lic1[2] &
+                  vh_din >= input$Filter_vh_din[1] & vh_din <= input$Filter_vh_din[2] &
+                  vh_speed >= input$Filter_vh_speed[1] & vh_speed <= input$Filter_vh_speed[2] &
+                  vh_weight >= input$Filter_vh_weight[1] & vh_weight <= input$Filter_vh_weight[2] &
+                  vh_value >= input$Filter_vh_value[1] & vh_value <= input$Filter_vh_value[2]]
         
+    })
+    
+    unfilteredtest4 = eventReactive(input$Filter_Go, {
+        unfilteredtest4 = readRDS("../../Data/Contracts.rds")
+        unfilteredtest4 = setDT(unfilteredtest4)
     })
     
     # Scatterplot - Output-----------
@@ -264,23 +339,23 @@ shinyServer(function(input, output) {
     
     
     # General Profit Plot--------------
-    GeneralRevenue = reactive({sum(pg17testyear4corr()[,Premium])})
-    GeneralExpeditures = reactive({sum(pg17testyear4corr()$fairPremium[pg17testyear4corr()$pred==1])+nrow(pg17testyear4corr())*200})
-    GeneralProfit = reactive({GeneralRevenue() - GeneralExpeditures()})
+    GeneralRevenue = reactive({sum(unfilteredtest4()$Premium)})
+    GeneralExpenditures = reactive({sum(unfilteredtest4()$fairPremium[unfilteredtest4()$pred==1])+nrow(unfilteredtest4())*200})
+    GeneralProfit = reactive({GeneralRevenue() - GeneralExpenditures()})
     
     GeneralKPI = c("Revenue","Expenditures","Profit")
-    GeneralValue = reactive({c(GeneralRevenue(), GeneralExpeditures(), GeneralProfit())})
+    GeneralValue = reactive({c(GeneralRevenue(), GeneralExpenditures(), GeneralProfit())})
     GeneralFin = reactive({data.frame(GeneralKPI, GeneralValue=round(as.integer(paste(GeneralValue()))/1000,0))})
     
     options(scipen=999)
     
     GeneralFinPlot = reactive({ggplot(GeneralFin(), aes(x=GeneralKPI, y=GeneralValue)) +
-        geom_col(aes(fill=GeneralKPI), show.legend = FALSE) +
-        geom_text(aes(label=GeneralValue), vjust=1.6, color="white", size=5.5)+
-        scale_x_discrete(limits=c("Revenue", "Expenditures", "Profit")) +
-        scale_fill_manual(values = c("Revenue"="black", "Expenditures"= "red", "Profit"=ifelse(GeneralProfit>=0,"green4","red"))) +
-        labs(x=element_blank(), y="in kEuros", title = "General Revenue, Expenditures and Profit") +
-        theme_classic()})
+            geom_col(aes(fill=GeneralKPI), show.legend = FALSE) +
+            geom_text(aes(label=GeneralValue), vjust=1.6, color="white", size=5.5)+
+            scale_x_discrete(limits=c("Revenue", "Expenditures", "Profit")) +
+            scale_fill_manual(values = c("Revenue"="black", "Expenditures"= "red", "Profit"="green4")) +
+            labs(x=element_blank(), y="in kEuros", title = "Filtered Revenue, Expenditures and Profit") +
+            theme_classic()})
     
     output$GenProfitPlot = renderPlot({GeneralFinPlot()})
     
@@ -295,11 +370,11 @@ shinyServer(function(input, output) {
     
     # Filtered Profit Plot--------------
     FilteredRevenue = reactive({sum(filteredtest4()$Premium)})
-    FilteredExpeditures = reactive({sum(filteredtest4()$fairPremium[filteredtest4()$pred==1])+nrow(filteredtest4())*200})
-    FilteredProfit = reactive({FilteredRevenue() - FilteredExpeditures()})
+    FilteredExpenditures = reactive({sum(filteredtest4()$fairPremium[filteredtest4()$pred==1])+nrow(filteredtest4())*200})
+    FilteredProfit = reactive({FilteredRevenue() - FilteredExpenditures()})
     
     FilKPI = c("Revenue","Expenditures","Profit")
-    FilValue = reactive({c(FilteredRevenue(), FilteredExpeditures(), FilteredProfit())})
+    FilValue = reactive({c(FilteredRevenue(), FilteredExpenditures(), FilteredProfit())})
     FilteredFin = reactive({data.frame(FilKPI, FilValue=round(as.integer(paste(FilValue()))/1000,0))})
     
     options(scipen=999)
@@ -323,10 +398,72 @@ shinyServer(function(input, output) {
     )
     
     # KPI - Text Outputs--------------
-    output$NmbContrTot = renderText({nrow(pg17testyear4corr())})
+    output$NmbContrTot = renderText({nrow(unfilteredtest4())})
     output$NmbContrFil = renderText({nrow(filteredtest4())})
     output$ROSTot = renderText({paste(round((GeneralProfit()/GeneralRevenue())*100,2),"%")})
     output$ROSFil = renderText({paste(round((FilteredProfit()/FilteredRevenue())*100,2),"%")})
-    output$AvgProfTot = renderText({paste(round((GeneralProfit()/nrow(pg17testyear4corr())),2)," Euros")})
+    output$AvgProfTot = renderText({paste(round((GeneralProfit()/nrow(unfilteredtest4())),2)," Euros")})
     output$AvgProfFil = renderText({paste(round((FilteredProfit()/nrow(filteredtest4())),2)," Euros")})
+    
+    # Check Contracts - Text Outputs----------
+    output$CheckNumber = renderText({nrow(Zwischentabelle())})
+    output$CheckName = renderText({as.character(Zwischentabelle()$Name[1])})
+    output$Checkvh_make = renderText({as.character(Zwischentabelle()$vh_make[1])})
+    output$Checkpol_coverage = renderText({as.character(Zwischentabelle()$pol_coverage[1])})
+    output$Checkpol_usage = renderText({as.character(Zwischentabelle()$pol_usage[1])})
+    output$Checkdrv_drv2 = renderText({as.character(Zwischentabelle()$drv_drv2[1])})
+    output$Checkdrv_sex1 = renderText({as.character(Zwischentabelle()$drv_sex1[1])})
+    output$Checkdrv_age_lic1 = renderText({Zwischentabelle()$drv_age_lic1[1]})
+    output$Checkvh_din = renderText({Zwischentabelle()$vh_din[1]})
+    output$Checkvh_speed = renderText({Zwischentabelle()$vh_speed[1]})
+    output$Checkvh_value = renderText({Zwischentabelle()$vh_value[1]})
+    output$Checkvh_weight = renderText({Zwischentabelle()$vh_weight[1]})
+    output$Checkpred = renderText({as.character(Zwischentabelle()$pred[1])})
+    output$CheckfairPremium = renderText({mround(Zwischentabelle()$fairPremium[1],5)})
+    output$CheckPremium = renderText({Zwischentabelle()$Premium[1]})
+    
+    # Accept Contract Button----------
+    observeEvent(input$AcceptContract_Go, {
+            # Load the old lists
+            OldContracts = readRDS("../../Data/Contracts.rds")
+            OldContracts = setDT(OldContracts)
+            OldZwischentabelle = readRDS("../../Data/zwisch.rds")
+            OldZwischentabelle = setDT(OldZwischentabelle)
+            
+            # Update the Contracts
+            NewContract = OldZwischentabelle[1]
+            UpdContracts = rbind(OldContracts, NewContract)
+            saveRDS(UpdContracts, file="../../Data/Contracts.rds")
+            
+            # Update Requests
+            UpdZwischentabelle = OldZwischentabelle[-1]
+            saveRDS(UpdZwischentabelle, file="../../Data/zwisch.rds")
+    })
+    
+    # Next Contract Button--------
+    Zwischentabelle = eventReactive(input$CheckNextContract, {
+        Zwischentabelle = readRDS("../../Data/zwisch.rds")
+    })
+    
+    # Decline Contract Button--------
+    observeEvent(input$DeclineContract_Go, {
+        # Load old Requests
+        OldZwischentabelle2 = readRDS("../../Data/zwisch.rds")
+        OldZwischentabelle2 = setDT(OldZwischentabelle2)
+        
+        # Update Requests
+        UpdZwischentabelle2 = OldZwischentabelle2[-1]
+        saveRDS(UpdZwischentabelle2, file="../../Data/zwisch.rds")
+    })
+    
+    
+    
+    # Data Table (Contracts) output---------
+    # Create the data table for the training data
+    output$contractsdatatable = renderDataTable({
+        unfilteredtest4()
+    }, options=list(searching=FALSE, paging=TRUE), rownames=FALSE, filter="top")
+
+    
+    
 })

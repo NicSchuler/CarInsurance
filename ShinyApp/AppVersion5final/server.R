@@ -39,8 +39,8 @@ departements.df = merge(departements.points, departements@data, by="id")
 departements.dt = setDT(departements.df)
 
 # Load the models
-# load("../../Data/prototypmodelle (rf und lm)/lm_tuned4.RData")
-# load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
+load("../../Data/prototypmodelle (rf und lm)/lm_tuned4.RData")
+load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
 # 
 # Verwaltungsaufwand = 200
 # Margin=0.25
@@ -66,13 +66,81 @@ mround <- function(x,base){
     base*round(x/base)
 }
 
-Zwischentabelle = readRDS("../../Data/zwischTEST.rds")
+Zwischentabelle = readRDS("../../Data/zwisch.rds")
 
 
 # Actual Server-------------
 
 # Build the server
 shinyServer(function(input, output) {
+    
+    # Premium Calculator
+    zwisch_app <-  eventReactive(input$safe, {
+        
+        # fetching the input
+        pol_coverage <- input$Information_pol_coverage
+        pol_usage <- input$Information_pol_usage
+        # pol_insee_code <- input$Information_pol_insee_code
+        drv_drv2 <- input$Information_drv_drv2
+        drv_sex1 <- input$Information_drv_sex1
+        drv_age_lic1 <- as.integer(input$Information_drv_age_lic1)
+        # drv_age1 <- as.integer(input$Information_drv_age1)
+        vh_din <- as.integer(input$Information_vh_din)
+        vh_speed <- as.integer(input$Information_vh_speed)
+        vh_value <- as.integer(input$Information_vh_value)
+        vh_weight <- as.integer(input$Information_vh_weight)
+        
+        
+        # binding to data frame
+        info <- data.frame(pol_coverage, pol_usage, drv_drv2, drv_sex1, drv_age_lic1, vh_din, vh_speed, vh_value, vh_weight)
+        # pol_insee_code,
+        
+        # preparing for prediction
+        info$pol_coverage <- factor(info$pol_coverage, levels = c("Maxi", "Median1", "Median2", "Mini"))
+        info$pol_usage <- factor(info$pol_usage, levels = c("AllTrips", "Professional", "Retired", "WorkPrivate"))
+        info$drv_drv2 <- factor(info$drv_drv2, levels = c("No","Yes"))
+        info$drv_sex1 <- factor(info$drv_sex1, levels = c("F", "M"))
+        # info$pol_insee_code <- as.factor(info$pol_insee_code)
+        
+        
+        
+        pos_or_neg <- predict(rf_tuned, newdata = info)
+        info$pred <- factor(pos_or_neg, levels = c(0,1))
+        fairPremium <- predict(lm_tuned4, newdata = info)
+        CostumPremium <- (fairPremium+200)*1.25
+        
+        zwisch_app <- info
+        zwisch_app$Name <- input$Name_drv
+        zwisch_app$vh_make <- input$Brand_drv
+        zwisch_app$fairPremium <- fairPremium
+        zwisch_app$Premium <- CostumPremium
+        
+        zwisch_app = setDT(zwisch_app)
+        
+        saveRDS(zwisch_app, file = "../../Data/zwischNEW.rds")
+        
+        return(zwisch_app)
+    })
+    
+    premium <- reactive({zwisch_app()$Premium})
+        
+    observeEvent(input$SendRequest, {
+        
+        zwischOld <- readRDS("../../Data/zwisch.rds")
+        zwischNew <- readRDS("../../Data/zwischNEW.rds")
+        zwischOld = setDT(zwischOld)
+        zwischNew = setDT(zwischNew)
+        zwisch = rbind(zwischOld,zwischNew)
+        zwisch = setDT(zwisch)
+        saveRDS(zwisch, file = "../../Data/zwisch.rds")
+        })
+        
+            
+    
+    output$Prediction <- renderText({
+        premium()
+    })
+    
     
     # Data Filters------------
     # Filter the traindata according to "Filter"-Panel
@@ -359,7 +427,7 @@ shinyServer(function(input, output) {
             # Load the old lists
             OldContracts = readRDS("../../Data/Contracts.rds")
             OldContracts = setDT(OldContracts)
-            OldZwischentabelle = readRDS("../../Data/zwischTEST.rds")
+            OldZwischentabelle = readRDS("../../Data/zwisch.rds")
             OldZwischentabelle = setDT(OldZwischentabelle)
             
             # Update the Contracts
@@ -368,24 +436,24 @@ shinyServer(function(input, output) {
             saveRDS(UpdContracts, file="../../Data/Contracts.rds")
             
             # Update Requests
-            UpdZwischentabelle = OldZwischentabelle[2:nrow(OldZwischentabelle)]
-            saveRDS(UpdZwischentabelle, file="../../Data/zwischTEST.rds")
+            UpdZwischentabelle = OldZwischentabelle[-1]
+            saveRDS(UpdZwischentabelle, file="../../Data/zwisch.rds")
     })
     
     # Next Contract Button--------
     Zwischentabelle = eventReactive(input$CheckNextContract, {
-        Zwischentabelle = readRDS("../../Data/zwischTEST.rds")
+        Zwischentabelle = readRDS("../../Data/zwisch.rds")
     })
     
     # Decline Contract Button--------
     observeEvent(input$DeclineContract_Go, {
         # Load old Requests
-        OldZwischentabelle2 = readRDS("../../Data/zwischTEST.rds")
+        OldZwischentabelle2 = readRDS("../../Data/zwisch.rds")
         OldZwischentabelle2 = setDT(OldZwischentabelle2)
         
         # Update Requests
-        UpdZwischentabelle2 = OldZwischentabelle2[2:nrow(OldZwischentabelle2)]
-        saveRDS(UpdZwischentabelle2, file="../../Data/zwischTEST.rds")
+        UpdZwischentabelle2 = OldZwischentabelle2[-1]
+        saveRDS(UpdZwischentabelle2, file="../../Data/zwisch.rds")
     })
     
     

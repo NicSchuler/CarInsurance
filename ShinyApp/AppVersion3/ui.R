@@ -261,7 +261,7 @@ shinyUI(fluidPage(
                           ),
                           
                           # Fourth Sub-Tab, Contracts Data Table------------
-                          tabPanel("Data Table",
+                          tabPanel("Held Contracts",
                                    br(),
                                    mainPanel(
                                      dataTableOutput("contractsdatatable")
@@ -272,7 +272,101 @@ shinyUI(fluidPage(
                
                # Fourth Main-Tab Contract Control------------
                tabPanel("Contract Control",
-                        actionButton("AcceptContract_Go", "Accept Contract")),
+                        br(),
+                        fluidPage(
+                          # First Row, Intro and Number of unchecked requests
+                          fluidRow(
+                            column(6,
+                                   p(strong("This page allows the person in charge to check the requests one by one.")),
+                                   hr()),
+                            column(2,
+                                   actionButton("CheckNextContract", "Next Contract"),
+                                   hr()),
+                            column(3, style = "background-color: green;color:white",
+                                   p("Number of unchecked requests"),
+                                   hr()),
+                            column(1, style = "background-color: green;color:white",
+                                   textOutput("CheckNumber"),
+                                   hr())
+                          ),
+                          # Second Row, Name Car and RF-Prediction
+                          fluidRow(
+                            column(2,
+                                   p("Name")),
+                            column(2,
+                                   textOutput("CheckName")),
+                            column(2,
+                                   p("Car manufacturer")),
+                            column(2,
+                                   textOutput("Checkvh_make")),
+                            column(2,
+                                   p("Claims expected")),
+                            column(2,
+                                   textOutput("Checkpred"))
+                            
+                          ),
+                          # Third Row, Coverage, Usage and Car-Value
+                          fluidRow(
+                            column(2,
+                                   p("Policy Coverage")),
+                            column(2,
+                                   textOutput("Checkpol_coverage")),
+                            column(2,
+                                   p("Policy Usage")),
+                            column(2,
+                                   textOutput("Checkpol_usage")),
+                            column(2,
+                                   p("Value of the Car [Euro]")),
+                            column(2,
+                                   textOutput("Checkvh_value"))
+                          ),
+                          # Fourth Row: Number of Drivers, Gender, age-lic
+                          fluidRow(
+                            column(2,
+                                   p("Number of Drivers")),
+                            column(2,
+                                   textOutput("Checkdrv_drv2")),
+                            column(2,
+                                   p("Gender of the Driver")),
+                            column(2,
+                                   textOutput("Checkdrv_sex1")),
+                            column(2,
+                                   p("Years with the License")),
+                            column(2,
+                                   textOutput("Checkdrv_age_lic1"))
+                          ),
+                          # Fifth Row: Car din, speed, weight
+                          fluidRow(
+                            column(2,
+                                   p("Power [bhp]")),
+                            column(2,
+                                   textOutput("Checkvh_din")),
+                            column(2,
+                                   p("Maximum Speed")),
+                            column(2,
+                                   textOutput("Checkvh_speed")),
+                            column(2,
+                                   p("Car weight")),
+                            column(2,
+                                   textOutput("Checkvh_weight"))
+                          ),
+                          # Sixth Row: Expected Claims, Premium, Buttons
+                          fluidRow(
+                            column(2,
+                                   p("Exp. Claim amount [Euro]")),
+                            column(2,
+                                   textOutput("CheckfairPremium")),
+                            column(2,
+                                   p("Offered Premium [Euro]")),
+                            column(2,
+                                   textOutput("CheckPremium")),
+                            column(2,
+                                   actionButton("AcceptContract_Go", "Accept Contract")),
+                            column(2,
+                                   actionButton("DeclineContract_Go", "Decline Contract"))
+                          )
+                        )
+                        ),
                
                
                

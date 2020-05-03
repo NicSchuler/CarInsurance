@@ -8,7 +8,7 @@ library(data.table)
 library(randomForest)
 library(caret)
 # Import and adapt data-----------
-dtrain <- read.csv("../Data/Train_pg17.csv", stringsAsFactors=TRUE)
+dtrain <- read.csv("../../Data/Train_pg17.csv", stringsAsFactors=TRUE)
 dtest <- read.csv("../Data/Test_pg17.csv", stringsAsFactors=TRUE)
 
 cor(dtrain$vh_cyl,dtrain$vh_din) # almost 73%
