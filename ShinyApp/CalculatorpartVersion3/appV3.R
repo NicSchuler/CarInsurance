@@ -30,7 +30,7 @@ ui<-shinyUI(fluidPage(
                                               condition = "input.Information_drv == 'Available'",
                                               flowLayout(
                                                   sliderInput("Information_drv_age1", "Please insert the Driver's age:", min=18, max=105, value=45),
-                                                  radioButtons("Information_drv_sex1", "Please insert the Driver's sex:", c("M", "W", "Other"),selected="M"),
+                                                  radioButtons("Information_drv_sex1", "Please insert the Driver's sex:", c("M", "F"),selected="M"),
                                                   numericInput("Information_drv_age_lic1", "Please insert the age of the Driver's licence:", value=20, min=0, max=87)
                                               )
                                           )
@@ -104,10 +104,18 @@ server<- function(input,output){
         
         pos_or_neg <- predict(rf_tuned, newdata = info)
         info$pred <- pos_or_neg
-        pred <- predict(lm_tuned, newdata = info)
+        pred_lm <- predict(lm_tuned, newdata = info)
         
+        zwisch <- readRDS("../../Data/zwisch.rds")
         
-        premium(pred)
+        zwisch_app <- info
+        zwisch_app$name <- input$Name_drv
+        zwisch_app$car_brand <- input$Brand_drv
+        zwisch_app$premium <- pred_lm
+        zwisch <- rbind(zwisch,zwisch_app)
+        saveRDS(zwisch, file = "../../Data/zwisch2.rds")
+        
+        premium(pred_lm)
     })    
     
     output$Prediction <- renderText({
