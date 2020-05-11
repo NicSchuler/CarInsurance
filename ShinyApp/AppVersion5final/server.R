@@ -113,7 +113,7 @@ shinyServer(function(input, output) {
         zwisch_app$Name <- input$Name_drv
         zwisch_app$vh_make <- input$Brand_drv
         zwisch_app$fairPremium <- fairPremium
-        zwisch_app$Premium <- CostumPremium
+        zwisch_app$Premium <- round(CostumPremium, digits=2)
         
         zwisch_app = setDT(zwisch_app)
         
@@ -439,7 +439,7 @@ shinyServer(function(input, output) {
             # Update the Contracts
             NewContract = OldZwischentabelle[1]
             UpdContracts = rbind(OldContracts, NewContract)
-            saveRDS(UpdContracts, file="../../Data/Contracts.rds")
+            if(!is.na(NewContract[1])){saveRDS(UpdContracts, file="../../Data/Contracts.rds")}
             
             # Update Requests
             UpdZwischentabelle = OldZwischentabelle[-1]

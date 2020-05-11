@@ -98,7 +98,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                                    p(strong("This page allows the person in charge to check the requests one by one.")),
                                    hr()),
                             column(2,
-                                   actionButton("CheckNextContract", "Next Contract"),
+                                   actionButton("CheckNextContract", "Refresh page"),
                                    hr()),
                             column(3, style = "background-color: green;color:white",
                                    p("Number of unchecked requests"),
@@ -191,7 +191,9 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                         br(),
                         p(strong("These filters are applied to all Plots and the data.table of the training data")),
                         br(),
+                        verticalLayout(
                         
+                          wellPanel(
                         # Filter policies
                         radioButtons("Filter_pol", "Filter Policy-Types", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                         conditionalPanel(
@@ -201,9 +203,10 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                             checkboxGroupInput("Filter_pol_coverage", "Filter pol_coverage", c("Mini", "Median1", "Median2", "Maxi"), selected=c("Mini", "Median1", "Median2", "Maxi"), inline=TRUE),
                             checkboxGroupInput("Filter_pol_usage", "Filter pol_usage", c("Retired", "WorkPrivate", "Professional", "AllTrips"), selected=c("Retired", "WorkPrivate", "Professional", "AllTrips"), inline=TRUE)
                           )
-                        ),
+                        )),
                         br(),
                         
+                        wellPanel(
                         # Filter Drivers / Policy-Holders
                         radioButtons("Filter_drv", "Filter Drivers / Policy-Holders", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                         conditionalPanel(
@@ -217,9 +220,10 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                             sliderInput("Filter_drv_age_lic1", "Filter drv_age_lic1", min=0, max=115, value=c(0,115)),
                             sliderInput("Filter_drv_age_lic2", "Filter drv_age_lic2", min=0, max=115, value=c(0,115))
                           )
-                        ),
+                        )),
                         br(),
                         
+                        wellPanel(
                         # Filter insured cars
                         radioButtons("Filter_vh", "Filter insured cars", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                         conditionalPanel(
@@ -233,9 +237,10 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                             sliderInput("Filter_vh_value", "Filter vh_value", min=0, max=160000, value=c(0,160000)),
                             sliderInput("Filter_vh_weight", "Filter vh_weight", min=0, max=8000, value=c(0,8000))
                             
-                          )),
+                          ))),
                         br(),
                         
+                        wellPanel(
                         # Filter insured cars
                         radioButtons("Filter_claims", "Filter the Claims", choices = c("Yes", "No"), selected = "No", inline = TRUE),
                         conditionalPanel(
@@ -246,7 +251,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                           )),
                         
                         actionButton("Filter_Go", "Apply Filter")
-               ),
+               ))),
                
                # Fourth Main-Tab Policy Protfolio Management-------------
                tabPanel("Policy Portfolio Management",
