@@ -137,6 +137,12 @@ shinyServer(function(input, output) {
         
             
     
+    output$Text <- renderText({
+        paste("Dear",input$Name_drv)
+    })
+    output$Text1 <- renderText({
+        paste("The insurance premium for your",input$Brand_drv,"will amount up to:")
+    })
     output$Prediction <- renderText({
         premium()
     })

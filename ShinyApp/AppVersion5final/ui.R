@@ -1,6 +1,7 @@
 # Packages---------
 library(shiny)
 library(tidyverse)
+library(shinythemes)
 
 # Drop-Down Lists-----------
 Trainnumcols = c("pol_bonus", "pol_duration", "drv_age1", "drv_age2", "drv_age_lic1", "drv_age_lic2", "vh_age", "vh_cyl", "vh_din", "vh_speed", "vh_value", "vh_weight", "Sum_claim_amount")
@@ -15,11 +16,11 @@ MapVars = c("insured_Cars", "Avg_pol_bonus", "Avg_claim_count", "Avg_claim_amoun
 
 # Define UI for application-----------
 
-shinyUI(fluidPage(
+shinyUI(fluidPage(theme = shinytheme("yeti"),
     navbarPage("BSGN Insurance",
                
                # First Main-Tab-------------
-               tabPanel("Premium Calculator", "Calculate your personalized premium!!!", br(),
+               tabPanel("Premium Calculator", h1("Calculate your personalized premium!", style = "color:black"), br(),
                tabsetPanel(
                  # First Sub-Tab, Insert Personal Information---------
                  tabPanel("Insert Personal Information",
@@ -76,11 +77,12 @@ shinyUI(fluidPage(
                  # Third Sub-Tab, Calculation---------
                  tabPanel("Calculation",
                           br(),
-                          "Dear", "",
+                          textOutput("Text"),
                           br(),
-                          "The insurance premium for your", "", "will amount up to:",
+                          textOutput("Text1"),
                           br(),
                           textOutput("Prediction"),
+                          br(),
                           actionButton("SendRequest", "Send Request")
                  )
                  
