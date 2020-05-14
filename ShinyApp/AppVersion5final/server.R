@@ -144,7 +144,7 @@ shinyServer(function(input, output) {
         paste("The insurance premium for your",input$Brand_drv,"will amount up to:")
     })
     output$Prediction <- renderText({
-        premium()
+        paste(premium(), "EUR")
     })
     
     

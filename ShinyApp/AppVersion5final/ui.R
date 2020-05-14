@@ -18,9 +18,7 @@ MapVars = c("insured_Cars", "Avg_pol_bonus", "Avg_claim_count", "Avg_claim_amoun
 
 shinyUI(fluidPage(theme = shinytheme("yeti"),
     navbarPage(
-      title = div(img(src = "../../lololo.png")), "BSGN Insurance"
-      ),
-               
+      title = "BSGN Insurance",
                # First Main-Tab-------------
                tabPanel("Premium Calculator", h1("Calculate your personalized premium!", style = "color:black"), br(),
                tabsetPanel(
