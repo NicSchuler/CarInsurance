@@ -17,16 +17,17 @@ MapVars = c("insured_Cars", "Avg_pol_bonus", "Avg_claim_count", "Avg_claim_amoun
 # Define UI for application-----------
 
 shinyUI(fluidPage(theme = shinytheme("yeti"),
-    navbarPage("BSGN Insurance",
+    navbarPage(
+      title = div(img(src = "../../lololo.png")), "BSGN Insurance"
+      ),
                
                # First Main-Tab-------------
                tabPanel("Premium Calculator", h1("Calculate your personalized premium!", style = "color:black"), br(),
                tabsetPanel(
                  # First Sub-Tab, Insert Personal Information---------
-                 tabPanel("Insert Personal Information",
+                 tabPanel("Personal Information",
                           br(),
-                          "Please Insert Personal Information:",
-                          br(),
+                          p(strong("Please Insert Personal Information:")),
                           verticalLayout(
                             br(),
                             wellPanel(textInput("Name_drv", "Insert the Name:", "Max Muster")),
@@ -55,10 +56,9 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                           )
                  ),
                  # Second Sub-Tab, Insert Vehicle Information---------
-                 tabPanel("Please Insert Vehicle Information",
+                 tabPanel("Vehicle Information",
                           br(),
-                          "Please Insert Vehicle Information:",
-                          br(),
+                          p(strong("Please Insert Vehicle Information:")),
                           verticalLayout(
                             br(),
                             wellPanel(radioButtons("Information_vh", "Information about Vehicle", choices = list("Available", "Not Available"), selected = "Not Available", inline = TRUE),
@@ -100,13 +100,15 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                             column(2,
                                    actionButton("CheckNextContract", "Refresh page"),
                                    hr()),
-                            column(3, style = "background-color: green;color:white",
-                                   p("Number of unchecked requests"),
+                            column(3, style = "height:100px;background-color: LightSlateGrey;color:white",
+                                   p("Number of unchecked requests:"),
                                    hr()),
-                            column(1, style = "background-color: green;color:white",
-                                   textOutput("CheckNumber"),
-                                   hr())
+                            column(1, style = "height:100px;background-color: LightSlateGrey;color:white",
+                                   br(),
+                                   textOutput("CheckNumber")
+                                   )
                           ),
+                          br(),
                           # Second Row, Name Car and RF-Prediction
                           fluidRow(
                             column(2,
@@ -125,15 +127,15 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                           ),
                           # Third Row, Coverage, Usage and Car-Value
                           fluidRow(
-                            column(2,
+                            column(2, style = "background-color: LightSteelBlue;",
                                    p("Policy Coverage")),
                             column(2,
                                    textOutput("Checkpol_coverage")),
-                            column(2,
+                            column(2, style = "background-color: LightSteelBlue;",
                                    p("Policy Usage")),
                             column(2,
                                    textOutput("Checkpol_usage")),
-                            column(2,
+                            column(2, style = "background-color: LightSteelBlue;",
                                    p("Value of the Car [Euro]")),
                             column(2,
                                    textOutput("Checkvh_value"))
@@ -155,29 +157,34 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                           ),
                           # Fifth Row: Car din, speed, weight
                           fluidRow(
-                            column(2,
+                            column(2, style = "background-color: LightSteelBlue;",
                                    p("Power [bhp]")),
                             column(2,
                                    textOutput("Checkvh_din")),
-                            column(2,
+                            column(2, style = "background-color: LightSteelBlue;",
                                    p("Maximum Speed")),
                             column(2,
                                    textOutput("Checkvh_speed")),
-                            column(2,
+                            column(2, style = "background-color: LightSteelBlue;",
                                    p("Car weight")),
                             column(2,
                                    textOutput("Checkvh_weight"))
                           ),
+                          br(),
                           # Sixth Row: Expected Claims, Premium, Buttons
                           fluidRow(
-                            column(2,
+                            column(2, style = "background-color: LimeGreen;",
                                    p("Exp. Claim amount [Euro]")),
                             column(2,
                                    textOutput("CheckfairPremium")),
-                            column(2,
+                            column(2, style = "background-color: LimeGreen;",
                                    p("Offered Premium [Euro]")),
                             column(2,
                                    textOutput("CheckPremium")),
+                          ),
+                          br(),
+                          br(),
+                          fluidRow(
                             column(2,
                                    actionButton("AcceptContract_Go", "Accept Contract")),
                             column(2,
@@ -189,7 +196,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                # Third Main-Tab Filters---------
                tabPanel("Filters",
                         br(),
-                        p(strong("These filters are applied to all Plots and the data.table of the training data")),
+                        p(strong("These filters are applied to all Plots and the data.table of the training data.")),
                         br(),
                         verticalLayout(
                         
@@ -262,14 +269,14 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                                    br(),
                                    sidebarLayout(
                                      sidebarPanel(
-                                       p(strong("Choose the Variable you want to compare")),
+                                       p(strong("Choose the Variable you want to compare.")),
                                        br(),
                                        selectInput("CompDensity_Var", "Variable to compare", choices = Testnumcols, selected = "vh_speed"),
                                        br(),
                                        actionButton("ComDensity_Go", "Create Plot")
                                      ),
                                      mainPanel(
-                                       p(strong("Compare densites of training data with actual policies")),
+                                       p(strong("Compare densites of training data with actual policies.")),
                                        p("Both data sets are filtered according to the filter tab."),
                                        br(),
                                        plotOutput("ComDensPlot"),
@@ -283,14 +290,14 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                                    br(),
                                    sidebarLayout(
                                      sidebarPanel(
-                                       p(strong("Choose the Variable you want to compare")),
+                                       p(strong("Choose the Variable you want to compare.")),
                                        br(),
                                        selectInput("CompMass_Var", "Variable to compare", choices = Testfactorcols, selected = "pol_coverage"),
                                        br(),
                                        actionButton("ComMass_Go", "Create Plot")
                                      ),
                                      mainPanel(
-                                       p(strong("Compare densites of training data with actual policies")),
+                                       p(strong("Compare densites of training data with actual policies.")),
                                        p("Both data sets are filtered according to the filter tab."),
                                        br(),
                                        plotOutput("ComMassPlot"),
@@ -302,7 +309,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                           # Third Sub-Tab, Expected Profit calculator---------
                           tabPanel("Expected Profit",
                                    br(),
-                                   p(strong("Estimate profit in general and based on filters")),
+                                   p(strong("Estimate profit in general and based on filters:")),
                                    br(),
                                    p("This page allows you to estimate the profits for the current year, so that you do not have bad surprises when you see the financial report."),
                                    fluidPage(
@@ -390,7 +397,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                                      br(),
                                      sidebarLayout(
                                          sidebarPanel(
-                                             p(strong("Variables for the Plot")),
+                                             p(strong("Variables for the Plot:")),
                                              selectInput("Scatter_X_Axis", "Variable for X-Axis", choices = Trainnumcols, selected = "vh_speed"),
                                              selectInput("Scatter_Y_Axis", "Variable for Y-Axis", choices = Trainnumcols, selected = "Sum_claim_amount"),
                                              selectInput("Scatter_Color", "Variable for color", choices = Trainfactorcols, selected = "NULL"),
@@ -406,7 +413,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                                              
                                              ),
                                          mainPanel(
-                                           p(strong("Scatterplot filtered according to Filter-Page")),
+                                           p(strong("Scatterplot filtered according to Filter-Page:")),
                                            br(),
                                            plotOutput("Scatterplot"),
                                            br(),
