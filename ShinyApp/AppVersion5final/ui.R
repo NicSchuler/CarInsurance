@@ -88,6 +88,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                
                # Second Main-Tab Contract Control------------
                tabPanel("Contract Control",
+                        p("Please press 'Refresh page' to load the first contract and after every time you accept or decline a contract."),
                         br(),
                         fluidPage(
                           # First Row, Intro and Number of unchecked requests
