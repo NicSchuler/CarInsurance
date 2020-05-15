@@ -12,7 +12,7 @@ library(classInt)   # Assigning colors to data
 # Transformations---------
 # Load the data and change the claims counter (Number not amount) to a factor 
 MatchedData = fread("../../Data/pg17traindata2.csv", stringsAsFactors = TRUE)
-traindata = fread("../../Data/Train_pg17.csv", stringsAsFactors = TRUE)
+# traindata = fread("../../Data/Train_pg17.csv", stringsAsFactors = TRUE)
 MatchedData$CountDistinct_id_claim = as.factor(MatchedData$CountDistinct_id_claim)
 MatchedData$drv_drv2 = factor(MatchedData$drv_drv2, labels=c("1 Driver", "2 Drivers"))
 MatchedData$claim = as.factor(ifelse(MatchedData$Sum_claim_amount > 0, 1,0))
@@ -74,7 +74,7 @@ Zwischentabelle = readRDS("../../Data/zwisch.rds")
 # Build the server
 shinyServer(function(input, output) {
     
-    # Premium Calculator
+    # Premium Calculator-------
     zwisch_app <-  eventReactive(input$safe, {
         
         # fetching the input

@@ -194,7 +194,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                # Third Main-Tab Filters---------
                tabPanel("Filters",
                         br(),
-                        p(strong("These filters are applied to all Plots and the data.table of the training data.")),
+                        p(strong("These filters are applied to all Plots and the tables of the 'Policy Portfolio Management' and 'Explore Training Data' - Tabs.")),
                         br(),
                         verticalLayout(
                         
@@ -260,6 +260,8 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                
                # Fourth Main-Tab Policy Protfolio Management-------------
                tabPanel("Policy Portfolio Management",
+                        p("If no information appears, please press 'Apply Filter' in the Filters-Tab!"),
+                        br(),
                         tabsetPanel(
                           
                           # First Sub-Tab, Densities---------
@@ -389,6 +391,8 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                
                # Fifth Main-Tab Trainingdata------------
                tabPanel(" Explore Training Data",
+                        p("If no information appears, please press 'Apply Filter' in the Filters-Tab!"),
+                        br(),
                         tabsetPanel(
                             # First Sub-Tab, Scatterplot-------------
                             tabPanel("Scatterplot",
@@ -447,17 +451,7 @@ shinyUI(fluidPage(theme = shinytheme("yeti"),
                                         )
                                      )
                         
-                        )),
-               
-               
-               
-               
-               
-               
-               
-               
-               # Fifth Main-Tab Additional Explanations----------
-               tabPanel("Additional Explanations")
+                        ))
                )
    
 ))
