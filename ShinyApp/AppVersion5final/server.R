@@ -12,23 +12,11 @@ library(classInt)   # Assigning colors to data
 # Transformations---------
 # Load the data and change the claims counter (Number not amount) to a factor 
 MatchedData = fread("../../Data/pg17traindata2.csv", stringsAsFactors = TRUE)
-# traindata = fread("../../Data/Train_pg17.csv", stringsAsFactors = TRUE)
 MatchedData$CountDistinct_id_claim = as.factor(MatchedData$CountDistinct_id_claim)
 MatchedData$drv_drv2 = factor(MatchedData$drv_drv2, labels=c("1 Driver", "2 Drivers"))
 MatchedData$claim = as.factor(ifelse(MatchedData$Sum_claim_amount > 0, 1,0))
 MatchedData$pol_insee_code = as.character(MatchedData$pol_insee_code)
 MatchedData$Departement = as.factor(str_sub(MatchedData$pol_insee_code, end=-4))
-
-# load("../../Data/pg17testyear4.Rdata")
-# pg17testyear4 = setDT(pg17testyear4)
-# pg17testyear4$pol_insee_code = as.character(pg17testyear4$pol_insee_code)
-# pg17testyear4$Departement = as.factor(str_sub(pg17testyear4$pol_insee_code, end=-4))
-# 
-# # Create a subsample for the portfolio management tab
-# set.seed(1)
-# Zwischtest = sample_n(Contracts, 200, replace=FALSE)
-# Zwischtest = setDT(Zwischtest)
-
 
 # Load the data für the map
 departements <- readOGR(dsn="../Geofla/Useful/DEPARTEMENT.shp")
@@ -42,25 +30,6 @@ departements.dt = setDT(departements.df)
 load("../../Data/prototypmodelle (rf und lm)/lm_tuned4.RData")
 load("../../Data/prototypmodelle (rf und lm)/rf_tuned2.RData")
 # 
-# Verwaltungsaufwand = 200
-# Margin=0.25
-# 
-# pg17testyear4corr$pred = predict(rf_tuned, pg17testyear4corr)
-# pg17testyear4corr$fairPremium = exp(predict(lm_tuned4, pg17testyear4corr))
-# pg17testyear4corr$Premium = (pg17testyear4corr$fairPremium+Verwaltungsaufwand)*(1+Margin)
-# 
-# pg17testyear4corr$drv_drv2 = factor(pg17testyear4corr$drv_drv2, labels=c("1 Driver", "2 Drivers"))
-# 
-# Contracts = pg17testyear4corr %>%
-#     mutate(Name=id_policy) %>%
-#     select(c("Name", "vh_make", "pol_coverage", "pol_usage", "drv_drv2", "drv_sex1", "drv_age_lic1", "vh_din", "vh_speed", "vh_value", "vh_weight", "pred", "fairPremium", "Premium"))
-
-# save(Contracts, file="../../Contracts.RData")
-# 
-# load("../../Data/Contracts.RData")
-# Contracts = setDT(Contracts)
-# 
-# Zwischentabelle = Contracts[1]
 
 mround <- function(x,base){
     base*round(x/base)
@@ -212,7 +181,7 @@ shinyServer(function(input, output) {
         })
         
         ScatterPLOT = reactive({ggplot(filtered(), aes_string(x=Scatter_X_Axis(), y=Scatter_Y_Axis(), color=Scatter_Color(), shape=Scatter_Shape())) +
-            geom_point()})
+            geom_point(alpha=0.3)})
         
         ifelse(input$Scatter_Smooth=="Yes",
                ifelse(input$Scatter_Method %in% c("gam", "auto"),
@@ -365,11 +334,11 @@ shinyServer(function(input, output) {
     
     output$GenProfitPlot = renderPlot({GeneralFinPlot()})
     
-    # Download Button for Density Plot
+    # Download Button for General Profit Plot
     output$downloadGenProfitPlot <- downloadHandler(
         filename = function() { paste('GeneralProfitPlot_', Sys.Date(), '.png', sep='') },
         content = function(file) {
-            ggsave(file,GeneralFinPlot)
+            ggsave(file,GeneralFinPlot())
         }
     )
     
@@ -399,7 +368,7 @@ shinyServer(function(input, output) {
     output$downloadFilProfitPlot <- downloadHandler(
         filename = function() { paste('GeneralProfitPlot_', Sys.Date(), '.png', sep='') },
         content = function(file) {
-            ggsave(file,FilteredFinPlot)
+            ggsave(file,FilteredFinPlot())
         }
     )
     
