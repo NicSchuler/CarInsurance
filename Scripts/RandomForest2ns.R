@@ -92,4 +92,28 @@ dtest3 <- dtest2[dtest2$pred == 1]
 pred3 <- predict(lm_tuned4, dtest2)
 rmse <- sqrt(mean((dtest2$Sum_claim_amount-exp(pred3))^2))
 rmse
+
+mae <- mean(abs(dtest2$Sum_claim_amount-exp(pred3)))
+mae
+
 sum(exp(pred3)) - sum(dtest2$Sum_claim_amount)
+
+GeneralRevenue = (sum(exp(pred3) + 200)*1.25)
+GeneralExpenditures = sum(dtest2$Sum_claim_amount)+nrow(dtest2)*200
+GeneralProfit = GeneralRevenue - GeneralExpenditures
+
+GeneralKPI = c("Revenue","Expenditures","Profit")
+GeneralValue = c(GeneralRevenue, GeneralExpenditures, GeneralProfit)
+GeneralFin = data.frame(GeneralKPI, GeneralValue=round(GeneralValue)/1000,0)
+
+options(scipen=999)
+
+GeneralFinPlot = ggplot(GeneralFin, aes(x=GeneralKPI, y=GeneralValue)) +
+    geom_col(aes(fill=GeneralKPI), show.legend = FALSE) +
+    geom_text(aes(label=GeneralValue), vjust=1.6, color="white", size=5.5)+
+    scale_x_discrete(limits=c("Revenue", "Expenditures", "Profit")) +
+    scale_fill_manual(values = c("Revenue"="black", "Expenditures"= "red", "Profit"="red")) +
+    labs(x=element_blank(), y="in kEuros", title = "Revenue, Expenditures and Profit on training data") +
+    theme_classic()
+
+ggsave("Failplot.png")
